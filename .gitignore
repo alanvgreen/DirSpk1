@@ -1,5 +1,15 @@
 # Alan's Adds
-Solution1/*
+Solution1
+ASF
+*.d
+*.o
+*.bin
+*.elf
+*.eep
+*.map
+*.hex
+*.lss
+*.srec
 
 # Windows image file caches
 Thumbs.db
