@@ -8,10 +8,11 @@
 */
 #include <asf.h>
 #include <string.h>
+#include "log.h"
 
-/**
- *  Configure UART console.
- */
+//
+//  Configure UART console.
+//
 static void configure_console(void)
 {
 	const usart_serial_options_t uart_serial_options = {
@@ -22,62 +23,63 @@ static void configure_console(void)
 	/* Configure console UART. */
 	sysclk_enable_peripheral_clock(CONSOLE_UART_ID);
 	stdio_serial_init(CONSOLE_UART, &uart_serial_options);
+	log_msg("console configured");
 }
 
-int main (void)
-{
-	sysclk_init();
-	board_init();
-	configure_console();
-	
-	puts("A\n");
-	
-	// Define Due Pin 53 = GPIOB.14 to output high for one second
+// Configure the IO pins
+static void configure_io_pins(void) {
+	// Arduino Due Pin 53 = GPIO B.14: set to be PWM2 output
 	pmc_enable_periph_clk(ID_PIOB);
-	pio_set_output(PIOB, PIO_PB14, HIGH, DISABLE, DISABLE);
-	puts("B\n");
-	delay_s(1);
-	puts("C\n");
-	
-	pio_set_output(PIOB, PIO_PB14, LOW, DISABLE, DISABLE);
-	
-	puts("D\n");
-	
-	// Now Define PB14 to peripheral B = PWMH2
-	pmc_enable_periph_clk(ID_PWM);
-	puts("E\n");
+	pio_configure_pin(PIO_PB14_IDX, PIO_PERIPH_B);
+	log_msg("io_pin_configuration done");
+}
+
+//
+// PWM Configuration
+//
+static void configure_pwm(void) {
+	// Channel 2: 1 second period, 50% duty cycle
 	pwm_channel_disable(PWM, PWM_CHANNEL_2);
-	puts("F\n");
-	
-	if (pio_configure_pin(PIO_PB14_IDX, PIO_PERIPH_B)) puts( "OK");
-	
-	puts("G\n");
+	pmc_enable_periph_clk(ID_PWM);
 	
 	pwm_clock_t clock_setting = {
 		.ul_clka = 60000,
 		.ul_clkb = 0,
 		.ul_mck = 86000000
 	};
-	if (0 == pwm_init(PWM, &clock_setting)) puts("OK");
-	puts("H\n");
-
-	pwm_channel_t instance;
-	memset(&instance, 0, sizeof(pwm_channel_t));
-	instance.channel = PWM_CHANNEL_2;
-	instance.ul_prescaler = PWM_CMR_CPRE_CLKA;
-	instance.alignment = PWM_ALIGN_LEFT;
-	instance.polarity = PWM_LOW;
-	instance.ul_period = 600;
-	instance.ul_duty = 300;
+	pwm_init(PWM, &clock_setting);
 	
-	if (0 == pwm_channel_init(PWM, &instance)) puts("OK");
+	pwm_channel_t instance = {
+		.channel = PWM_CHANNEL_2,
+		.ul_prescaler = PWM_CMR_CPRE_CLKA,
+		.alignment = PWM_ALIGN_LEFT,
+		.polarity = PWM_LOW,
+		.ul_period = 60000,
+		.ul_duty = 30000,
+	};
+	pwm_channel_init(PWM, &instance);
 	pwm_channel_enable(PWM, PWM_CHANNEL_2);
 	
-	puts("I\n");
+	log_msg("configure_pwm done");
+}
+
+//
+// Initialization
+//
+static void init(void) {
+	sysclk_init();
+	board_init();
+	configure_console();
+	configure_io_pins();
+	configure_pwm();
+}
+
+int main(void)
+{
+	init();
 	
 	while (1) {
 		delay_s(1);
-		puts("J\n");
+		log_msg("1 second");
 	}
 }
-
