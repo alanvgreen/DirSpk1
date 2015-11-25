@@ -64,6 +64,15 @@ static void configure_pwm(void) {
 }
 
 //
+// Configure the timer/counter
+//
+static void configure_timer() {
+	
+	pmc_enable_periph_clk(ID_TC0);
+	
+}
+
+//
 // Initialization
 //
 static void init(void) {
@@ -72,6 +81,7 @@ static void init(void) {
 	configure_console();
 	configure_io_pins();
 	configure_pwm();
+	configure_timer();
 }
 
 int main(void)
