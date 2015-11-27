@@ -28,7 +28,11 @@ static void configure_console(void)
 
 // Configure the IO pins
 static void configure_io_pins(void) {
-	// Arduino Due Pin 53 = GPIO B.14: set to be PWM2 output
+	// Arduino Due Pin A7 = GPIO A.2: set to be input for AD0
+	pmc_enable_periph_clk(ID_PIOA);
+	pio_configure_pin(PIO_PA2_IDX, PIO_INPUT);
+	
+	// Arduino Due Pin D53 = GPIO B.14: set to be PWM2 output
 	pmc_enable_periph_clk(ID_PIOB);
 	pio_configure_pin(PIO_PB14_IDX, PIO_PERIPH_B);
 	log_msg("io_pin_configuration done");
@@ -66,10 +70,49 @@ static void configure_pwm(void) {
 //
 // Configure the timer/counter
 //
-static void configure_timer() {
+static void configure_timer(void) {
 	
+	static uint32_t ul_sysclk;
+	ul_sysclk = sysclk_get_cpu_hz();
+	uint32_t ul_div, ul_tcclks;
+	
+	// TC0 channel 0 provides a 40kHz clock
 	pmc_enable_periph_clk(ID_TC0);
+	tc_find_mck_divisor(40000, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
+	tc_init(TC0, 0, ul_tcclks | TC_CMR_CPCTRG);
+	tc_write_rc(TC0, 0, (ul_sysclk / ul_div) / 40000);
+	NVIC_EnableIRQ((IRQn_Type)ID_TC0);
+	tc_enable_interrupt(TC0, 0, TC_IER_CPCS);
+	tc_start(TC0, 0);
 	
+	// TC0 channel 1  provides a 20Hz clock
+	pmc_enable_periph_clk(ID_TC1);
+	tc_find_mck_divisor(20, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
+	tc_init(TC0, 1, ul_tcclks | TC_CMR_CPCTRG);
+	tc_write_rc(TC0, 1, (ul_sysclk / ul_div) / 20);
+	NVIC_EnableIRQ((IRQn_Type)ID_TC1);
+	tc_enable_interrupt(TC0, 1, TC_IER_CPCS);
+	tc_start(TC0, 1);
+	
+	log_msg("configure_timer done");
+}
+
+
+//
+// Interrupts
+//
+static uint32_t count40;
+void TC0_Handler(void) {
+	// Read ID_TC0 Status to indicate that interrupt has been handled
+	tc_get_status(TC0, 0);
+	count40 = count40 >= 40000 ? 0 : (count40 + 1);
+}
+
+static uint32_t ticks = 0;
+void TC1_Handler(void) {
+	// Read ID_TC1 Status to indicate that interrupt has been handled
+	tc_get_status(TC0, 1);
+	ticks++;
 }
 
 //
@@ -88,8 +131,12 @@ int main(void)
 {
 	init();
 	
+	uint32_t last = 0;
+	printf("init done\n");
 	while (1) {
-		delay_s(1);
-		log_msg("1 second");
+		if (last != ticks) { 
+			log_msg("tick");
+		}
+		last = ticks;
 	}
 }
