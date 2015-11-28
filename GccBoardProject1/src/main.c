@@ -45,6 +45,8 @@ void TC0_Handler(void) {
 	if (ch0 > max_adc) {
 		max_adc = ch0;
 	}
+	
+	dacc_write_conversion_data(DACC, ch0);
 }
 
 

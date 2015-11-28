@@ -31,7 +31,9 @@ static void configure_io_pins(void) {
 	// Arduino Due Pin D53 = GPIO B.14: set to be PWM2 output
 	pmc_enable_periph_clk(ID_PIOB);
 	pio_configure_pin(PIO_PB14_IDX, PIO_PERIPH_B);
-	log_msg("io_pin_configuration done");
+	
+	// Arduino Due Pin DAC0 = GPIO B.15
+	pio_configure_pin(PIO_PB15_IDX, PIO_PERIPH_B);
 }
 
 //
@@ -59,8 +61,6 @@ static void configure_pwm(void) {
 	};
 	pwm_channel_init(PWM, &instance);
 	pwm_channel_enable(PWM, PWM_CHANNEL_2);
-	
-	log_msg("configure_pwm done");
 }
 
 //
@@ -91,8 +91,6 @@ static void configure_timer(void) {
 	NVIC_EnableIRQ((IRQn_Type)ID_TC1);
 	tc_enable_interrupt(TC0, 1, TC_IER_CPCS);
 	tc_start(TC0, 1);
-	
-	log_msg("configure_timer done");
 }
 
 
@@ -124,6 +122,24 @@ static void configure_adc(void) {
 	adc_start(ADC);
 }
 
+//
+// Configure DAC0. PIO B.17 = AD0 = Arduino D66/DAC0
+//
+static void configure_dac(void) {
+	pmc_enable_periph_clk(ID_DACC);
+	dacc_reset(DACC);
+	dacc_set_transfer_mode(DACC, 0);  // 16 bit transfer mode
+	dacc_set_timing(DACC, 
+	    0x08, // refresh = 8 - though we send new data more often than this
+	    0, // not max speed
+	    0x10); // startup = 640 periods
+	dacc_set_channel_selection(DACC, 0); // Have to revisit when have dual inputs
+	dacc_enable_channel(DACC, 0); 
+	dacc_set_analog_control(DACC,
+		DACC_ACR_IBCTLCH0(0x02) | 
+		DACC_ACR_IBCTLCH1(0x02) |
+		DACC_ACR_IBCTLDACCORE(0x01));
+}
 
 //
 // Initialization
@@ -136,4 +152,6 @@ void init(void) {
 	configure_pwm();
 	configure_timer();
 	configure_adc();
+	configure_dac();
+	log_msg("init done\r\n");
 }
