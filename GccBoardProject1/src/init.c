@@ -97,6 +97,35 @@ static void configure_timer(void) {
 
 
 //
+// Configure ADC. PIO A.2 pin = AD0 = Arduino A7
+//
+static void configure_adc(void) {
+	pmc_enable_periph_clk(ID_ADC);
+	
+	// Set 20MHz ADC clock = 50ns period. 640 cycle startup time ~= 32ns
+	// adc_init(ADC, sysclk_get_cpu_hz(), 20 * 1000 * 1000, ADC_STARTUP_TIME_10);
+	// Hack : 5 MHz
+	adc_init(ADC, sysclk_get_cpu_hz(), 5 * 1000 * 1000, ADC_STARTUP_TIME_10);
+	
+	adc_configure_timing(
+		ADC, 
+		4, // Tracking time = (x + 1) periods = 250ns
+	    0, // Settling time is unused 
+	    1); // Transfer time = (2x + 3) periods = 250ns
+		
+	// Turn on bias current, since we're doing many conversions
+	adc_set_bias_current(ADC, 1);
+	
+	// Just the one channel
+	adc_enable_channel(ADC, ADC_CHANNEL_0);
+		
+	// Start free run mode
+	adc_configure_trigger(ADC, ADC_TRIG_SW, 1);
+	adc_start(ADC);
+}
+
+
+//
 // Initialization
 //
 void init(void) {
@@ -106,4 +135,5 @@ void init(void) {
 	configure_io_pins();
 	configure_pwm();
 	configure_timer();
+	configure_adc();
 }
