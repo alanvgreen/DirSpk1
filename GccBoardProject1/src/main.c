@@ -14,18 +14,19 @@
 static uint32_t ticks = 0;
 static uint16_t min_adc = 0;
 static uint16_t max_adc = 0;
+static uint16_t min_dac = 0;
+static uint16_t max_dac = 0;
 
 // Main loop. Executed every tick of TC1.
 static void loop(void) {
-	static uint16_t last_min = 0;
-	static uint16_t last_max = 0;
 	if (ticks % 10 == 0) {
-		printf("min = %4d, max = %4d, range = %d, min_diff = %4d, max_diff = %4d\r\n", 
-			min_adc, max_adc, max_adc - min_adc, min_adc - last_min, max_adc - last_max);
-		last_min = min_adc;
-		last_max = max_adc;
-		max_adc = 0;
-		min_adc = 0xffff;
+		printf("adc min/max = %4d/%4d, dac min/max = %4d/%4d ,range = %d\r\n", 
+			min_adc, max_adc, min_dac, max_dac, max_dac - min_dac);
+		max_adc = max_dac = 0;
+		min_adc = min_dac = 0xffff;
+	}
+	if (ticks % 10 == 0) {
+		pio_toggle_pin(PIO_PB27_IDX);
 	}
 }
 
@@ -46,7 +47,25 @@ void TC0_Handler(void) {
 		max_adc = ch0;
 	}
 	
-	dacc_write_conversion_data(DACC, ch0);
+	// Write DAC value for audio output
+	// Assume 3300 is max ADC input
+	const uint32_t adc_limit = 4095;
+	uint16_t dac_value = ((uint32_t) ch0) * 4096 / adc_limit;
+	if (dac_value < min_dac) {
+		min_dac = dac_value;
+	}
+	if (dac_value > max_dac) {
+		max_dac = dac_value;
+	}
+	dacc_write_conversion_data(DACC, dac_value);
+	
+	// Ultrasonic output
+	// TODO: think about this some more
+	int32_t duty = ((int32_t) ch0) * US_PERIOD / adc_limit;
+	if (duty >= US_PERIOD) {
+		duty = US_PERIOD - 1;
+	}
+	PWM->PWM_CH_NUM[2].PWM_CDTYUPD = duty;
 }
 
 

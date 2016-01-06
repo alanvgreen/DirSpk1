@@ -28,36 +28,42 @@ static void configure_io_pins(void) {
 	pmc_enable_periph_clk(ID_PIOA);
 	pio_configure_pin(PIO_PA2_IDX, PIO_INPUT);
 	
-	// Arduino Due Pin D53 = GPIO B.14: set to be PWM2 output
-	pmc_enable_periph_clk(ID_PIOB);
-	pio_configure_pin(PIO_PB14_IDX, PIO_PERIPH_B);
-	
 	// Arduino Due Pin DAC0 = GPIO B.15
+	pmc_enable_periph_clk(ID_PIOB);
 	pio_configure_pin(PIO_PB15_IDX, PIO_PERIPH_B);
+	// Arduino Due Pin D13 = GPIO B.27
+	pio_configure_pin(PIO_PB27_IDX, PIO_OUTPUT_1);
+		
+	// Arduino Due Pin D38/39 = GPIO C.6/7: set to be PWM2 output L/H
+	pmc_enable_periph_clk(ID_PIOC);
+	pio_configure_pin(PIO_PC6_IDX, PIO_PERIPH_B);
+	pio_configure_pin(PIO_PC7_IDX, PIO_PERIPH_B);
 }
 
 //
 // PWM Configuration
 //
 static void configure_pwm(void) {
-	// Channel 2: 1 second period, 50% duty cycle
+	// Channel 2: 40kHz period, 50% duty cycle
 	pwm_channel_disable(PWM, PWM_CHANNEL_2);
 	pmc_enable_periph_clk(ID_PWM);
 	
-	pwm_clock_t clock_setting = {
-		.ul_clka = 60000,
-		.ul_clkb = 0,
-		.ul_mck = 86000000
-	};
-	pwm_init(PWM, &clock_setting);
+	// Prescaling not required
+	//pwm_clock_t clock_setting = {
+		//.ul_clka = 0,
+		//.ul_clkb = 0,
+		//.ul_mck = sysclk_get_cpu_hz();
+	//};
+	//pwm_init(PWM, &clock_setting);
 	
+	// Configure channel 2 
 	pwm_channel_t instance = {
 		.channel = PWM_CHANNEL_2,
-		.ul_prescaler = PWM_CMR_CPRE_CLKA,
+		.ul_prescaler = PWM_CMR_CPRE_MCK, // 84MHz
 		.alignment = PWM_ALIGN_LEFT,
 		.polarity = PWM_LOW,
-		.ul_period = 60000,
-		.ul_duty = 30000,
+		.ul_period = US_PERIOD,
+		.ul_duty = US_PERIOD / 2,
 	};
 	pwm_channel_init(PWM, &instance);
 	pwm_channel_enable(PWM, PWM_CHANNEL_2);
