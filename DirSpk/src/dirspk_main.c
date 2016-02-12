@@ -4,6 +4,7 @@
 
 #include <asf.h>
 #include "init.h"
+#include "util.h"
 
 int main(void) {
 	// Initialze peripherals etc
