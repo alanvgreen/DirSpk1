@@ -11,5 +11,5 @@ int main(void) {
 	init();
 	
 	// Blink out a 5/5 patterns
-	fatalBlink(5, 5);
+	fatalBlink(1, 3);
 }

@@ -59,6 +59,27 @@
 // From module: Delay routines
 #include <delay.h>
 
+// From module: FreeRTOS - PDC Interface Layer
+#include <freertos_peripheral_control.h>
+#include <freertos_peripheral_control_private.h>
+
+// From module: FreeRTOS - UART Interface Layer
+#include <freertos_uart_serial.h>
+
+// From module: FreeRTOS mini Real-Time Kernel
+#include <FreeRTOS.h>
+#include <FreeRTOS_CLI.h>
+#include <StackMacros.h>
+#include <croutine.h>
+#include <list.h>
+#include <mpu_wrappers.h>
+#include <portable.h>
+#include <projdefs.h>
+#include <queue.h>
+#include <semphr.h>
+#include <task.h>
+#include <timers.h>
+
 // From module: GPIO - General purpose Input/Output
 #include <gpio.h>
 
@@ -70,6 +91,9 @@
 
 // From module: Interrupt management - SAM implementation
 #include <interrupt.h>
+
+// From module: PDC - Peripheral DMA Controller Example
+#include <pdc.h>
 
 // From module: PIO - Parallel Input/Output Controller
 #include <pio.h>
@@ -86,6 +110,15 @@
 
 // From module: System Clock Control - SAM3X/A implementation
 #include <sysclk.h>
+
+// From module: UART - Univ. Async Rec/Trans
+#include <uart.h>
+
+// From module: USART - Serial interface - SAM implementation for devices with both UART and USART
+#include <serial.h>
+
+// From module: USART - Univ. Syn Async Rec/Trans
+#include <usart.h>
 
 // From module: pio_handler support enabled
 #include <pio_handler.h>
