@@ -1,15 +1,21 @@
-/*
- * Dirspk1 Main
- */ 
+//
+// Dirspk1 Main
+//
 
 #include <asf.h>
 #include "init.h"
 #include "util.h"
 
+// The tick hook
+extern void vApplicationTickHook(void);
+void vApplicationTickHook(void) {
+	// do nothing
+}
+
 int main(void) {
-	// Initialze peripherals etc
+	// Initialize peripherals etc
 	init();
 	
-	// Blink out a 5/5 patterns
-	fatalBlink(1, 3);
+	// Blink out pattern
+	fatalBlink(5, 1);
 }

@@ -5,6 +5,16 @@
 #include <asf.h>
 #include "util.h"
 
+// Stack overflow - blink out a pattern
+void vApplicationStackOverflowHook( xTaskHandle pxTask, signed char *pcTaskName ) {
+	fatalBlink(10, 1);
+}
+
+// Malloc failed - blink out a pattern
+void vApplicationMallocFailedHook(void) {
+	fatalBlink(10, 2);
+}
+
 // Do a pattern of blinks
 static void blinkPattern(short initDelay, short count, short offTime, short onTime) {
 	ioport_set_pin_level(LED0_GPIO, false);
@@ -19,6 +29,10 @@ static void blinkPattern(short initDelay, short count, short offTime, short onTi
 
 // Blink out a pattern in death.
 void fatalBlink(short longBlinks, short shortBlinks) {
+	// Turn off all interrupt handling
+	__set_FAULTMASK(1);
+	
+	// Blink the lights
 	for (;;) {
 		blinkPattern(1000, 20, 25, 25);
 		blinkPattern(600, longBlinks, 400, 600);

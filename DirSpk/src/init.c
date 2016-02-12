@@ -15,6 +15,8 @@ static void initGpio(void) {
 
 void init(void) {
 	sysclk_init();
+	NVIC_SetPriorityGrouping(0);
 	board_init();
+	
 	initGpio();
 }
