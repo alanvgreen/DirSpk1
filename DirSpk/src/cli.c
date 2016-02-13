@@ -11,9 +11,10 @@ static char const *WELCOME = " - DirSpk1 Command Server - \r\nType \"help\" for 
 static char const *PROMPT = "\r\n> ";
 static char const *CRLF = "\r\n";
 static char const *SPACE_LAST = "\b ";
+static char const *TASKS_HEADER =  "Task          State  Priority  Stack	#\r\n************************************************\r\n";
 
 // Transmit buffer
-#define txBufSize 101
+#define txBufSize 1024
 static uint8_t txBuf[txBufSize];
 
 // Command buffer
@@ -94,18 +95,30 @@ static void cliTask(void *pvParameters) {
 		consoleWrite(PROMPT);
 		getCommand();
 		consoleWrite(CRLF);
-		consoleWrite((char *) cmdBuf);
+		portBASE_TYPE more;
+		do {
+			more = FreeRTOS_CLIProcessCommand((int8_t *) cmdBuf, (int8_t *) txBuf, txBufSize);
+			consoleWriteTxBuf();
+		} while (more);
 		consoleWrite(CRLF);
 	}
 }
 
-//
-// Command to show each task
+// Command to show stats about each task
 static portBASE_TYPE tasksCommand(
     int8_t *pcWriteBuffer,
     size_t xWriteBufferLen,
     const int8_t *pcCommandString) {
-	strcpy((char *)pcWriteBuffer, "Hello\r\n");	
+	
+	// First time through, show the header	
+	static bool shownHeader = false;
+	if (!shownHeader) {
+		strcpy((char *) pcWriteBuffer, TASKS_HEADER);
+		shownHeader = true;
+		return pdTRUE;
+	}
+	vTaskList(pcWriteBuffer);
+	shownHeader = false;
 	return pdFALSE;
 }
 
@@ -113,7 +126,7 @@ static portBASE_TYPE tasksCommand(
 static CLI_Command_Definition_t allCommands[] = {
 	{
 		USTR("tasks"), 
-		USTR("tasks:\r\n Lists each task, along with basic stats about the task.\r\n\r\n"),
+		USTR("tasks:\r\n Lists each task, along with basic stats about the task.\r\n"),
 		tasksCommand,
 		0
 	},

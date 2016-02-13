@@ -117,8 +117,7 @@ to save RAM.  Note, however, that the command console itself is not re-entrant,
 so only one command interpreter interface can be used at any one time.  For
 that reason, no attempt at providing mutual exclusion to the buffer is
 attempted. */
-#define configCOMMAND_INT_MAX_OUTPUT_SIZE 400
-
+#define configCOMMAND_INT_MAX_OUTPUT_SIZE 1
 
 /* Cortex-M specific definitions. */
 
