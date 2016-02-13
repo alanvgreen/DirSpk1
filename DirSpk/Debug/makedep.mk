@@ -10,6 +10,8 @@ src\ASF\sam\drivers\usart\usart.c
 
 src\ASF\thirdparty\freertos\freertos-7.3.0\source\FreeRTOS_CLI.c
 
+src\cli.c
+
 src\ASF\thirdparty\freertos\freertos-7.3.0\source\list.c
 
 src\ASF\thirdparty\freertos\freertos-7.3.0\source\portable\gcc\sam\port.c

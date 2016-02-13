@@ -6,11 +6,13 @@
 #include "util.h"
 
 // Stack overflow - blink out a pattern
-void vApplicationStackOverflowHook( xTaskHandle pxTask, signed char *pcTaskName ) {
+extern void vApplicationStackOverflowHook( xTaskHandle, signed char *);
+void vApplicationStackOverflowHook(xTaskHandle pxTask, signed char *pcTaskName) {
 	fatalBlink(10, 1);
 }
 
 // Malloc failed - blink out a pattern
+extern void vApplicationMallocFailedHook( void );
 void vApplicationMallocFailedHook(void) {
 	fatalBlink(10, 2);
 }
@@ -36,7 +38,7 @@ void fatalBlink(short longBlinks, short shortBlinks) {
 	for (;;) {
 		blinkPattern(1000, 20, 25, 25);
 		blinkPattern(600, longBlinks, 400, 600);
-		blinkPattern(1000, 15, 25, 25);
+		blinkPattern(700, 10, 25, 25);
 		blinkPattern(400, shortBlinks, 600, 100);
 	}
 }
