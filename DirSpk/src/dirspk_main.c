@@ -5,6 +5,7 @@
 #include <asf.h>
 #include "cli.h"
 #include "init.h"
+#include "state.h"
 #include "util.h"
 
 // The tick hook
@@ -17,8 +18,9 @@ int main(void) {
 	// Initialize peripherals etc
 	init();
 	
-	// Start the CLI
+	// Start each component
 	startCli();
+	startGlobalState();
 	
 	// Start Task scheduler
 	vTaskStartScheduler();

@@ -6,6 +6,10 @@ src\ASF\common\services\freertos\sam\freertos_peripheral_control.c
 
 src\ASF\common\services\freertos\sam\freertos_uart_serial.c
 
+src\ASF\sam\drivers\adc\adc.c
+
+src\ASF\sam\drivers\adc\adc_sam3u.c
+
 src\ASF\sam\drivers\usart\usart.c
 
 src\ASF\thirdparty\freertos\freertos-7.3.0\source\FreeRTOS_CLI.c
@@ -35,6 +39,8 @@ src\ASF\common\services\delay\sam\cycle_counter.c
 src\dirspk_main.c
 
 src\init.c
+
+src\state.c
 
 src\util.c
 
