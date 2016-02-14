@@ -10,6 +10,13 @@ typedef enum {
 	ADC_TEST
 } ADCMode;
 
+// Turning on or off
+typedef enum {
+	OO_NONE,
+	OO_ON,
+	OO_OFF
+} OnOffMode;
+
 // Global state is modified by passing commands to the StateProcessor
 typedef struct {
 	// New mode to set or ADC_NONE
@@ -18,6 +25,8 @@ typedef struct {
 	// Channel to use in test mode
 	int adcTestChannel;
 	
+	// Turn on or off or none
+	OnOffMode dacMode;
 } GlobalModCommand;
 
 // The type of the GlobalState structure.
@@ -27,6 +36,9 @@ typedef struct {
 	
 	// Current ADC mode
 	ADCMode adcMode;
+	
+	// Current DAC mode
+	OnOffMode dacMode;
 } GlobalState;
 
 // Global state may be read directly from this variable

@@ -59,6 +59,9 @@
 #include <compiler.h>
 #include <status_codes.h>
 
+// From module: DACC - Digital-to-Analog Converter
+#include <dacc.h>
+
 // From module: Delay routines
 #include <delay.h>
 
@@ -113,6 +116,9 @@
 
 // From module: System Clock Control - SAM3X/A implementation
 #include <sysclk.h>
+
+// From module: TC - Timer Counter
+#include <tc.h>
 
 // From module: UART - Univ. Async Rec/Trans
 #include <uart.h>

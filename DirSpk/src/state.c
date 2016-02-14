@@ -31,6 +31,16 @@ static void setAdc(GlobalModCommand *command) {
 	adc_disable_all_channel(ADC);
 	adc_enable_channel(ADC, command->adcTestChannel);
 }
+
+// Set up the DACC
+static void setDac(GlobalModCommand *command) {
+	if (command->dacMode == OO_NONE) {
+		return;
+	}
+	
+	GLOBAL_STATE.dacMode = command->dacMode;
+	dacc_enable(DACC);
+}
 	
 // The global state task.
 static void globalStateTask(void *pvParameters) {
@@ -41,6 +51,7 @@ static void globalStateTask(void *pvParameters) {
 		ASSERT_BLINK(t, 4, 3);
 		GLOBAL_STATE.lastCommandTicks = xTaskGetTickCount();
 		setAdc(&buf);
+		setDac(&buf);
 	}
 }
 
