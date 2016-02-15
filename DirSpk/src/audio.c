@@ -1,0 +1,24 @@
+// audio.c
+// Routines for Audio output.
+#include <asf.h>
+
+//
+// Utility function to indicate interrupt handled
+static __attribute__((optimize("O0"))) inline void clearTcBit() {
+	TC0->TC_CHANNEL[0].TC_SR;
+}
+
+// 40kHz sampler.
+//
+// Runs at too high a priority to call FreeRTOS routines.
+void TC0_Handler(void) {
+	// Read status to indicate that interrupt has been handled
+	TC0->TC_CHANNEL[0].TC_SR;
+	
+	// Get a value
+	// Look at audio mode
+	
+	// Always output to both PWM and DAC
+	// If DAC enabled - output there
+	// If PWM enabled - output there
+}

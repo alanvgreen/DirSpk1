@@ -591,6 +591,9 @@
     <Compile Include="src\ASF\thirdparty\freertos\freertos-7.3.0\source\FreeRTOS_CLI.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\audio.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\cli.c">
       <SubType>compile</SubType>
     </Compile>

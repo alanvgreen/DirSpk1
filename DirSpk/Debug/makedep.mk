@@ -10,9 +10,15 @@ src\ASF\sam\drivers\adc\adc.c
 
 src\ASF\sam\drivers\adc\adc_sam3u.c
 
+src\ASF\sam\drivers\dacc\dacc.c
+
+src\ASF\sam\drivers\tc\tc.c
+
 src\ASF\sam\drivers\usart\usart.c
 
 src\ASF\thirdparty\freertos\freertos-7.3.0\source\FreeRTOS_CLI.c
+
+src\audio.c
 
 src\cli.c
 

@@ -39,7 +39,7 @@ static void setDac(GlobalModCommand *command) {
 	}
 	
 	GLOBAL_STATE.dacMode = command->dacMode;
-	dacc_enable(DACC);
+	dacc_enable_channel(DACC, 0);
 }
 	
 // The global state task.

@@ -86,7 +86,7 @@ static void initUart(void) {
 static void initTimers() {
 	pmc_enable_periph_clk(ID_TC0);
 	
-	static uint32_t ul_sysclk = sysclk_get_cpu_hz(); 
+	uint32_t ul_sysclk = sysclk_get_cpu_hz(); 
 	uint32_t ul_div, ul_tcclks;
 	
 	// TC0 channel 0 provides a 40kHz clock to power audio out.
@@ -122,12 +122,11 @@ void initDac(void) {
 		0, // not max speed
 		0x10); // startup = 640 periods
 	dacc_set_channel_selection(DACC, 0); // Have to revisit when have dual inputs
-	dacc_enable_channel(DACC, 0);
 	dacc_set_analog_control(DACC,
 		DACC_ACR_IBCTLCH0(0x02) |
 		DACC_ACR_IBCTLCH1(0x02) |
 		DACC_ACR_IBCTLDACCORE(0x01));
-	dacc_disable(DACC);
+	dacc_disable_channel(DACC, 0);
 }
 
 void init(void) {
@@ -139,4 +138,5 @@ void init(void) {
 	initAdc();
 	initUart();
 	initTimers();
+	initDac();
 }

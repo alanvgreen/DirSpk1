@@ -18,7 +18,7 @@ int main(void) {
 	// Initialize peripherals etc
 	init();
 	
-	// Start each component
+	// Start each task 
 	startCli();
 	startGlobalState();
 	
