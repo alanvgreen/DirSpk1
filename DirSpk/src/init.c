@@ -21,6 +21,17 @@ static void initGpio(void) {
 	// PIOB - PB27 = D13 = LED
 	ioport_set_pin_level(LED0_GPIO, false);
 	ioport_set_pin_dir(LED0_GPIO, IOPORT_DIR_OUTPUT);
+	
+	// PIOC - PC12-PC19 = D51-D44 for encoders
+	uint32_t pc1219 = 0x000ff000;
+	PIOC->PIO_PUER = pc1219; // enable pullups
+	PIOC->PIO_PER = pc1219; // GPIO, no peripheral
+	PIOC->PIO_ODR = pc1219; // Not driven
+	PIOC->PIO_OWDR = pc1219; // Do not allow writes to ODSR
+	PIOC->PIO_DIFSR = pc1219; // Choose debounce filter
+	PIOC->PIO_SCDR = 32768 / 500; // Debounce = 500Hz stops a lot of slop.
+	PIOC->PIO_IFER = pc1219; // enable debounce
+	PIOC->PIO_IER = pc1219; // Standard level change interrupt
 }
 
 //
