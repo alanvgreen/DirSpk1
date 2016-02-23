@@ -23,14 +23,13 @@ static void initGpio(void) {
 	ioport_set_pin_dir(LED0_GPIO, IOPORT_DIR_OUTPUT);
 	
 	// PIOC - PC12-PC19 = D51-D44 for encoders
-	uint32_t pc1219 = 0x000ff000;
-	PIOC->PIO_PUER = pc1219; // enable pullups
-	PIOC->PIO_PER = pc1219; // GPIO, no peripheral
-	PIOC->PIO_ODR = pc1219; // Not driven
-	PIOC->PIO_OWDR = pc1219; // Do not allow writes to ODSR
-	PIOC->PIO_DIFSR = pc1219; // Choose debounce filter
+	PIOC->PIO_ODR = ENCODER_PINS; // Not driven
+	PIOC->PIO_OWDR = ENCODER_PINS; // Do not allow writes to ODSR
+	PIOC->PIO_PER = ENCODER_PINS; // GPIO, no peripheral
+	PIOC->PIO_PUER = ENCODER_PINS; // enable pullups
+	PIOC->PIO_DIFSR = ENCODER_PINS; // Choose debounce filter
 	PIOC->PIO_SCDR = 32768 / 500; // Debounce = 500Hz stops a lot of slop.
-	PIOC->PIO_IFER = pc1219; // enable debounce
+	PIOC->PIO_IFER = ENCODER_PINS; // enable debounce
 }
 
 //
