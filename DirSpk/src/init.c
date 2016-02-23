@@ -31,7 +31,6 @@ static void initGpio(void) {
 	PIOC->PIO_DIFSR = pc1219; // Choose debounce filter
 	PIOC->PIO_SCDR = 32768 / 500; // Debounce = 500Hz stops a lot of slop.
 	PIOC->PIO_IFER = pc1219; // enable debounce
-	PIOC->PIO_IER = pc1219; // Standard level change interrupt
 }
 
 //
@@ -94,7 +93,7 @@ static void initUart(void) {
 }
 
 // Initialize TC0 channel 0 and 1
-static void initTimers() {
+static void initTimers(void) {
 	pmc_enable_periph_clk(ID_TC0);
 	
 	uint32_t ul_sysclk = sysclk_get_cpu_hz(); 
@@ -122,7 +121,7 @@ static void initTimers() {
 
 
 // Deal with the DAC
-void initDac(void) {
+static void initDac(void) {
 	pmc_enable_periph_clk(ID_DACC);
 	dacc_reset(DACC);
     

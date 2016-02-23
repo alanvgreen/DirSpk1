@@ -4,7 +4,7 @@
 
 //
 // Utility function to indicate interrupt handled
-static __attribute__((optimize("O0"))) inline void clearTcBit() {
+static __attribute__((optimize("O0"))) inline void clearTcBit(void) {
 	TC0->TC_CHANNEL[0].TC_SR;
 }
 
@@ -15,7 +15,7 @@ static __attribute__((optimize("O0"))) inline void clearTcBit() {
 // it is not slow.
 void TC0_Handler(void) {
 	// Read status to indicate that interrupt has been handled
-	TC0->TC_CHANNEL[0].TC_SR;
+	clearTcBit();
 	
 	// Get a value
 	// Look at audio mode

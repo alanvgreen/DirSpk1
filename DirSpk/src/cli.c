@@ -17,7 +17,6 @@ static char const *SPACE_LAST = "\b ";
 static char const *TASKS_HEADER =  "Task          State  Priority  Stack	#\r\n************************************************\r\n";
 static char const *CHANNEL_NOT_VALID = "Channel must be between 0 and 15\r\n";
 static char const *SAMPLES_NOT_VALID = "Samples must be between 1 and 10000\r\n";
-static char const *STATE_SET_FAIL = "Could not update global state\r\n";
 
 // Transmit buffer
 #define txBufSize 1024
@@ -95,10 +94,7 @@ static void getCommand(void) {
 
 // Write the current global state
 static void writeGlobalStateSummary(void) {
-	snprintf((char *) txBuf, txBufSize, 
-	    "\r\n[last: %ld, ADC: %d]", 
-		GLOBAL_STATE.lastCommandTicks, 
-		GLOBAL_STATE.adcMode);
+	snprintf((char *) txBuf, txBufSize, "\r\n[empty]");
 	consoleWriteTxBuf();
 }
 
@@ -174,16 +170,8 @@ static portBASE_TYPE adcDumpCommand(
 	}
 	
 	// Set test mode
-	GlobalModCommand cmd = {
-		.adcMode = ADC_TEST,
-		.adcTestChannel = chan,
-	};
-	modifyGlobalState(&cmd);
-	vTaskDelay(MS_TO_TICKS(1));
-	if (GLOBAL_STATE.adcMode != ADC_TEST) {
-		consoleWrite(STATE_SET_FAIL);
-		return pdFALSE;
-	}
+	adc_disable_all_channel(ADC);
+	adc_enable_channel(ADC, chan);
 	
 	int i;
 	for (i = 0; i < samples; i++) {

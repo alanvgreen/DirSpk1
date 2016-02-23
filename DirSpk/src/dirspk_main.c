@@ -20,7 +20,6 @@ int main(void) {
 	
 	// Start each task 
 	startCli();
-	startGlobalState();
 	
 	// Start Task scheduler
 	vTaskStartScheduler();
