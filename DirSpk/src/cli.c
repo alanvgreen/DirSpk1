@@ -107,8 +107,8 @@ static void writeDetailedEncoderState(int n) {
 	} else if (s->dir == ENC_CCW) {
 		d = LABEL_ENC_CCW;
 	}
-	snprintf((char*) txBuf, txBufSize, "%s, %d, %hhd->%hhd\r\n", 
-	    d, s->dirTicks, s->last, s->prev);
+	snprintf((char*) txBuf, txBufSize, "%s, %d, %hhx\r\n", 
+	    d, s->dirTicks, s->machine);
 	consoleWriteTxBuf();
 }
 

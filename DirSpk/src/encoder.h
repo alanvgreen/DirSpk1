@@ -12,18 +12,17 @@
 
 // Direction encoder last went in
 typedef enum {
-	ENC_NONE, ENC_CW, ENC_CCW
+	ENC_NONE = 0, ENC_CW = 1, ENC_CCW = 2
 } EncoderDirection;
 
+
 // Encoder switch states - kept in 2LSB
-typedef uint8_t EncoderSwitches;
+typedef uint8_t EncoderSignals;
 
 // Encoder state, Bits 3,2 = last. Bits 1,0 = prev to last
 typedef struct {
-	// Last state
-	EncoderSwitches last;
-	// Previous state to last
-	EncoderSwitches prev;
+	// State machine state
+	uint8_t machine;
 	
 	// Last direction and timestamp (for debugging)
 	portTickType dirTicks;
