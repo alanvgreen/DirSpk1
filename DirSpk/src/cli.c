@@ -99,16 +99,18 @@ static void getCommand(void) {
 	}
 }
 
+static const char *encoderLabel(EncoderDirection d) {
+	switch (d) {
+		case ENC_CW: return LABEL_ENC_CW;
+		case ENC_CCW: return LABEL_ENC_CCW;
+		default: return LABEL_ENC_NONE;
+	}
+}
+
 static void writeDetailedEncoderState(int n) {
 	EncoderState *s = GLOBAL_STATE.encoders + n;
-	const char *d = LABEL_ENC_NONE;
-	if (s->dir == ENC_CW) {
-		d = LABEL_ENC_CW;
-	} else if (s->dir == ENC_CCW) {
-		d = LABEL_ENC_CCW;
-	}
 	snprintf((char*) txBuf, txBufSize, "%s, %d, %hhx\r\n", 
-	    d, s->dirTicks, s->machine);
+	    encoderLabel(s->dir), (int) s->dirTicks, s->machine);
 	consoleWriteTxBuf();
 }
 
@@ -203,7 +205,7 @@ static portBASE_TYPE adcDumpCommand(
 	return pdFALSE;
 }
 
-// Command to dump values from the ADC
+// Command to track encoder behavior
 static portBASE_TYPE encoderTrackCommand(
 	int8_t *pcWriteBuffer,
 	size_t xWriteBufferLen,
@@ -237,6 +239,41 @@ static portBASE_TYPE encoderTrackCommand(
 	return pdFALSE;
 }
 
+
+// Command to listen to the encoders
+static portBASE_TYPE encoderListenCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+	int8_t const *p = pcCommandString;
+	
+	// scan through command then whitespace to seconds param
+	while (*p && !isspace(*p)) p++;
+	while (*p && isspace(*p)) p++;
+	int limitSeconds = parseInt(p);
+	if (limitSeconds < 0 || limitSeconds > 30) {
+		consoleWrite(SECONDS_NOT_VALID);
+		return pdFALSE;
+	}
+	
+	EncoderMove move;
+	for (int seconds = 0; seconds < limitSeconds; seconds++) {
+		snprintf((char *) txBuf, txBufSize, "%d:\r\n", seconds);
+		consoleWriteTxBuf();
+		uint32_t endTicks = xTaskGetTickCount() + 1000;
+		while (xTaskGetTickCount() < endTicks) {
+			uint32_t ticks = endTicks - xTaskGetTickCount();
+		    if (xQueueReceive(GLOBAL_STATE.encoderDebugQueue, &move, ticks)) {
+				snprintf((char *) txBuf, txBufSize, "  %d - %s\r\n", 
+				    move.num, encoderLabel(move.dir));
+				consoleWriteTxBuf();
+			}
+		}
+	}
+	
+	return pdFALSE;
+}
+
 // All the commands to register
 static CLI_Command_Definition_t allCommands[] = {
 	{
@@ -246,10 +283,16 @@ static CLI_Command_Definition_t allCommands[] = {
 		2
 	},
 	{
-		USTR("enc"),
-		USTR("enc n s: Track encoder n for s seconds.\r\n"),
+		USTR("enctrack"),
+		USTR("enctrack n s: Track encoder n for s seconds.\r\n"),
 		encoderTrackCommand,
 		2
+	},
+	{
+		USTR("enc"),
+		USTR("enc s: Listen to debug encoders for s seconds.\r\n"),
+		encoderListenCommand,
+		1
 	},
 	{
 		USTR("tasks"),

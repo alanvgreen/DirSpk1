@@ -41,7 +41,8 @@ static int8_t state_table[][4] = {
 
 // Update a single encoder
 // Executes from within an interrupt
-static void encoderUpdate(EncoderState *state, EncoderSignals curr) {
+static void encoderUpdate(int num, EncoderSignals curr) {
+	EncoderState *state = GLOBAL_STATE.encoders + num;
 	uint8_t instruction = state_table[state->machine][curr];
 	state->machine = instruction >> 4;
 		
@@ -50,8 +51,21 @@ static void encoderUpdate(EncoderState *state, EncoderSignals curr) {
 	
 	// Handle the direction chosen
 	if (dir != ENC_NONE) {
+		// Record in encoder record
 		state->dirTicks = xTaskGetTickCount();
 		state->dir = dir;
+		
+		// Send move in queue
+		EncoderMove move = {
+			.num = num,
+			.when = state->dirTicks,
+			.dir = dir,
+		};
+		signed portBASE_TYPE taskWoken = false;
+		xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue, &move, &taskWoken);
+		if (taskWoken) {
+			vPortYieldFromISR();
+		}
 	}
 }
 
@@ -61,14 +75,12 @@ void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
 	uint32_t curr = PIOC->PIO_PDSR >> 12;
 	
 	for (int i = 0; i < NUM_ENCODERS; i++) {
-		encoderUpdate(GLOBAL_STATE.encoders + i, curr & 3);
+		encoderUpdate(i, curr & 3);
 		curr >>= 2;
 	}
 }
 
 // Start the encoder subsystem
 void startEncoders(void) {
-	for (int i = 0; i < NUM_ENCODERS; i++) {
-		// GLOBAL_STATE.encoders[i];
-	}
+	GLOBAL_STATE.encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
 }

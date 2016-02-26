@@ -1,7 +1,7 @@
 // encoder.h
-
 // Header file for encoder.c
 #include <stdbool.h>
+
 #ifndef ENCODER_H_
 #define ENCODER_H_
 
@@ -29,6 +29,18 @@ typedef struct {
 	EncoderDirection dir;
 } EncoderState;
 
+// Encoder direction signal, for queuing.
+typedef struct {
+	// Which encoder this is
+	int num;
+	
+	// A timestamp
+	portTickType when;
+	
+	// When this happened
+	EncoderDirection dir;
+} EncoderMove;
+	
 // Handle PIOC interrupt for interrupt
 extern void encoderPIOCHandler(uint32_t, uint32_t);
 

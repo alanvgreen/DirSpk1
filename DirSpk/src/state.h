@@ -21,6 +21,9 @@ typedef struct {
 	// State of the encoders
 	EncoderState encoders[NUM_ENCODERS];
 	
+	// Debug queue. All ticks go in here, although queue may overflow
+	xQueueHandle encoderDebugQueue;
+	
 } GlobalState;
 
 // Global state may be read directly from this variable
