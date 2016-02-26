@@ -8,6 +8,8 @@ src\ASF\common\services\freertos\sam\freertos_peripheral_control.c
 
 src\ASF\common\services\freertos\sam\freertos_uart_serial.c
 
+src\ASF\common\services\spi\sam_spi\spi_master.c
+
 src\ASF\common\utils\interrupt\interrupt_sam_nvic.c
 
 src\ASF\sam\boards\arduino_due_x\init.c
@@ -25,6 +27,8 @@ src\ASF\sam\drivers\pio\pio_handler.c
 src\ASF\sam\drivers\pmc\pmc.c
 
 src\ASF\sam\drivers\pmc\sleep.c
+
+src\ASF\sam\drivers\spi\spi.c
 
 src\ASF\sam\drivers\tc\tc.c
 

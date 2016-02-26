@@ -8,7 +8,5 @@
 #define MAX_QUEUE_WAIT_MS MS_TO_TICKS(1000)
 
 // The Global State
-GlobalState GLOBAL_STATE = {
-	.encoderQueues = {NULL, NULL, NULL, NULL},
-};
+GlobalState GLOBAL_STATE;
 

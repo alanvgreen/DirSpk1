@@ -17,6 +17,13 @@ static char const *SPACE_LAST = "\b ";
 static char const *TASKS_HEADER =  "Task          State  Priority  Stack	#\r\n************************************************\r\n";
 static char const *CHANNEL_NOT_VALID = "Channel must be between 0 and 15\r\n";
 static char const *SAMPLES_NOT_VALID = "Samples must be between 1 and 10000\r\n";
+static char const *SECONDS_NOT_VALID = "Seconds must be between 0 and 30\r\n";
+static char const *ENCODER_NOT_VALID = "Encoder must be between 0 and 3\r\n";
+
+static char const *LABEL_ENC_NONE = "NUN";
+static char const *LABEL_ENC_CW = "CW ";
+static char const *LABEL_ENC_CCW = "CCW";
+
 
 // Transmit buffer
 #define txBufSize 1024
@@ -92,9 +99,22 @@ static void getCommand(void) {
 	}
 }
 
+static void writeDetailedEncoderState(int n) {
+	EncoderState *s = GLOBAL_STATE.encoders + n;
+	const char *d = LABEL_ENC_NONE;
+	if (s->dir == ENC_CW) {
+		d = LABEL_ENC_CW;
+	} else if (s->dir == ENC_CCW) {
+		d = LABEL_ENC_CCW;
+	}
+	snprintf((char*) txBuf, txBufSize, "%s, %d, %hhd->%hhd\r\n", 
+	    d, s->dirTicks, s->last, s->prev);
+	consoleWriteTxBuf();
+}
+
 // Write the current global state
 static void writeGlobalStateSummary(void) {
-	snprintf((char *) txBuf, txBufSize, "\r\n[empty]");
+	snprintf((char*) txBuf, txBufSize, "\r\n");
 	consoleWriteTxBuf();
 }
 
@@ -183,12 +203,52 @@ static portBASE_TYPE adcDumpCommand(
 	return pdFALSE;
 }
 
+// Command to dump values from the ADC
+static portBASE_TYPE encoderTrackCommand(
+	int8_t *pcWriteBuffer,
+	size_t xWriteBufferLen,
+	const int8_t *pcCommandString) {
+		
+	int8_t const *p = pcCommandString;
+	
+	// scan through command, then through whitespace to encoder
+	while (*p && !isspace(*p)) p++;
+	while (*p && isspace(*p)) p++;
+	int enc = parseInt(p);
+	if (enc < 0 || enc > 3) {
+		consoleWrite(ENCODER_NOT_VALID);
+		return pdFALSE;
+	}	
+	
+	// scan through encoder then whitespace to seconds param
+	while (*p && !isspace(*p)) p++;
+	while (*p && isspace(*p)) p++;
+	int seconds = parseInt(p);
+	if (seconds < 0 || seconds > 30) {
+		consoleWrite(SECONDS_NOT_VALID);
+		return pdFALSE;
+	}
+	uint32_t endTicks = xTaskGetTickCount() + (seconds * 1000);
+	
+	while (xTaskGetTickCount() < endTicks) {
+		writeDetailedEncoderState(enc);
+		vTaskDelay(20);
+	}
+	return pdFALSE;
+}
+
 // All the commands to register
 static CLI_Command_Definition_t allCommands[] = {
 	{
 		USTR("adcdump"), 
 		USTR("adcdump c n: Dump n samples from ADC channel c.\r\n"),
 		adcDumpCommand,
+		2
+	},
+	{
+		USTR("enc"),
+		USTR("enc n s: Track encoder n for s seconds.\r\n"),
+		encoderTrackCommand,
 		2
 	},
 	{

@@ -3,6 +3,7 @@
 // General device initialization
 
 #include <asf.h>
+#include "encoder.h"
 #include "init.h"
 #include "util.h"
 
@@ -23,13 +24,14 @@ static void initGpio(void) {
 	ioport_set_pin_dir(LED0_GPIO, IOPORT_DIR_OUTPUT);
 	
 	// PIOC - PC12-PC19 = D51-D44 for encoders
-	PIOC->PIO_ODR = ENCODER_PINS; // Not driven
-	PIOC->PIO_OWDR = ENCODER_PINS; // Do not allow writes to ODSR
-	PIOC->PIO_PER = ENCODER_PINS; // GPIO, no peripheral
-	PIOC->PIO_PUER = ENCODER_PINS; // enable pullups
-	PIOC->PIO_DIFSR = ENCODER_PINS; // Choose debounce filter
-	PIOC->PIO_SCDR = 32768 / 500; // Debounce = 500Hz stops a lot of slop.
-	PIOC->PIO_IFER = ENCODER_PINS; // enable debounce
+	pio_set_input(PIOC, ENCODER_PINS, PIO_PULLUP);
+	pio_set_debounce_filter(PIOC, ENCODER_PINS, 500); // Debounce at 500Hz
+	pio_handler_set(PIOC, ID_PIOC, ENCODER_PINS, 0, encoderPIOCHandler);
+	pio_handler_set_priority(PIOC, ID_PIOC, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
+	pio_enable_interrupt(PIOC, ENCODER_PINS);
+	
+	// Make a fake call to the interrupt handler to force intialization
+	encoderPIOCHandler(ID_PIOC, 0);
 }
 
 //
@@ -72,7 +74,7 @@ static void initUart(void) {
 	freertos_peripheral_options_t driver_options = {
 		.receive_buffer = rxBuf,
 		.receive_buffer_size = rxBufSize,
-		.interrupt_priority = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY,
+		.interrupt_priority = configLIBRARY_LOWEST_INTERRUPT_PRIORITY,
 		.operation_mode = UART_RS232,
 		.options_flags = WAIT_TX_COMPLETE | USE_TX_ACCESS_MUTEX,
 	};
@@ -103,7 +105,7 @@ static void initTimers(void) {
 	tc_find_mck_divisor(40000, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
 	tc_init(TC0, 0, ul_tcclks | TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC);
 	tc_write_rc(TC0, 0, (ul_sysclk / ul_div) / 40000);
-	NVIC_SetPriority((IRQn_Type)ID_TC0, 1); // Most important (lowest number)
+	NVIC_SetPriority((IRQn_Type)ID_TC0, 1); // Highest priority (lowest number) except for NMI
 	NVIC_EnableIRQ((IRQn_Type)ID_TC0);
 	tc_enable_interrupt(TC0, 0, TC_IER_CPCS);
 	tc_start(TC0, 0);

@@ -4,6 +4,7 @@
 
 #include <asf.h>
 #include "cli.h"
+#include "encoder.h"
 #include "init.h"
 #include "state.h"
 #include "util.h"
@@ -18,8 +19,9 @@ int main(void) {
 	// Initialize peripherals etc
 	init();
 	
-	// Start each task 
+	// Start each task/subsystem
 	startCli();
+	startEncoders();
 	
 	// Start Task scheduler
 	vTaskStartScheduler();

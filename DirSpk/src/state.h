@@ -4,6 +4,7 @@
 #define STATE_H_
 
 #include <stdbool.h>
+#include "encoder.h"
 
 // The type of the GlobalState structure.
 // Contains all state that is shared between components, particularly if 
@@ -17,9 +18,8 @@ typedef struct {
 	// How Audio signals are generated. Set by calling xxx
 	// AudioInMode audioInMode;
 	
-	// Queue for encoder outputs
-	// Initialized by encoder.c
-	xQueueHandle encoderQueues[4];
+	// State of the encoders
+	EncoderState encoders[NUM_ENCODERS];
 	
 } GlobalState;
 
