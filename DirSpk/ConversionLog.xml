@@ -1,29 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <?xml-stylesheet type='text/xsl' href='ConversionLog.xslt'?>
-<conversion conversiontitle="Upgrade Report - Atmel Software Framework Upgrade Log" subtitle1="Upgrading Modules From" subtitle2="to" date="Tuesday, 23 February 2016" time="8:51 PM">
+<conversion conversiontitle="Upgrade Report - Atmel Software Framework Upgrade Log" subtitle1="Upgrading Modules From" subtitle2="to" date="Saturday, 27 February 2016" time="5:28 PM">
   <general>
-    <log timestamp="02-23-2016 20-51-23">
+    <log timestamp="02-27-2016 17-28-17">
       <message>Unloading project</message>
     </log>
-    <log timestamp="02-23-2016 20-51-23">
+    <log timestamp="02-27-2016 17-28-18">
       <message>Project unload complete.</message>
     </log>
-    <log timestamp="02-23-2016 20-51-41">
-      <message>Backing up of project started.</message>
-    </log>
-    <log timestamp="02-23-2016 20-51-41">
-      <message>Project backup completed.</message>
-    </log>
-    <log timestamp="02-23-2016 20-51-41">
+    <log timestamp="02-27-2016 17-28-30">
       <message>Reloading project after backup.</message>
     </log>
-    <log timestamp="02-23-2016 20-51-44">
+    <log timestamp="02-27-2016 17-28-32">
       <message>Project reload complete.</message>
     </log>
-    <log timestamp="02-23-2016 20-51-45">
+    <log timestamp="02-27-2016 17-28-32">
       <message>Upgrading of project started.</message>
     </log>
-    <log timestamp="02-23-2016 20-52-48">
+    <log timestamp="02-27-2016 17-29-27">
       <message>Project upgrade complete</message>
     </log>
   </general>
@@ -480,6 +474,11 @@
       <action description="Import framework file as 'src\ASF\sam\drivers\pmc\pmc.h'." result="SUCCESS" resulttext="" />
       <action description="Import framework file as 'src\ASF\sam\drivers\pmc\sleep.h'." result="SUCCESS" resulttext="" />
       <action description="Add folder '../src/ASF/sam/drivers/pmc' to include search path." result="INFO" resulttext="Folder path '../src/ASF/sam/drivers/pmc' is already present in the 'preprocessingassembler.general.IncludePaths' include path list. Add Include Path operation cannot be performed." />
+    </moduleinfo>
+    <moduleinfo name="Arduino Due/X LED support enabled">
+      <action description="Import framework file as 'src\ASF\sam\boards\arduino_due_x\led.c'." result="SUCCESS" resulttext="" />
+      <action description="Import framework file as 'src\ASF\sam\boards\arduino_due_x\led.h'." result="SUCCESS" resulttext="" />
+      <action description="Add folder '../src/ASF/sam/boards/arduino_due_x' to include search path." result="SUCCESS" resulttext="" />
     </moduleinfo>
   </update>
   <update versiontext="3.28.1" description="Upgrading to version">

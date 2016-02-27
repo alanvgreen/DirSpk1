@@ -6,6 +6,7 @@
 #include "cli.h"
 #include "encoder.h"
 #include "init.h"
+#include "spi.h"
 #include "state.h"
 #include "util.h"
 
@@ -22,6 +23,7 @@ int main(void) {
 	// Start each task/subsystem
 	startCli();
 	startEncoders();
+	startSpi();
 	
 	// Start Task scheduler
 	vTaskStartScheduler();

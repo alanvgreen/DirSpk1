@@ -16,10 +16,11 @@ static void initGpio(void) {
 	// PA2 = A7 = ADC channel 0
 	ioport_set_pin_dir(PIO_PA2_IDX, IOPORT_DIR_INPUT);
 	
-	// PA25,26,27,28 = MISO, MOSI, SCK, SPIOCS0
+	// PA25,26,27,28 = MISO, MOSI, SCK, SPIOCS0 = D74, D75, D76, D77
+	// On the Due D77 and D10 share a pin
 	const int spiPins = 0xf << 25;
-	ioport_set_port_mode(PIOA, spiPins, IOPORT_MODE_MUX_A);
-	ioport_disable_port(PIOA, spiPins)
+	ioport_set_port_mode(IOPORT_PIOA, spiPins, IOPORT_MODE_MUX_A);
+	ioport_disable_port(IOPORT_PIOA, spiPins);
 	
 	// PB15 = DAC0
 	ioport_set_pin_mode(PIO_PB15_IDX, IOPORT_MODE_MUX_B);
@@ -153,18 +154,18 @@ static void initSpi0(void) {
 	// Enable
 	SPI0->SPI_CR = 0x1; 
 	
-	// Master, variable select, no decode chip select, no fault detection,
+	// Master, variable select, no decode chip select, fault detection,
 	// no wait read before transfer.
-	// DELAY = 6;
-	SPI0->SPI_MR = (6 << 24) + 0x21; 
+	// DELAY = 100;
+	SPI0->SPI_MR = (100 << 24) + 0x23; 
 	
 	// SPI Chip 0
 	// No delay between consecutive transfers. 
 	// (Though keep in mind MCP4261 requires ~10ms delay after writing NVRAM)
 	// 16 bit transfers
 	// clock polarity, phase = 00
-	int32_t clk = div_ceil(100000,  sysclk_get_cpu_hz()); // 0.1MHz (approx)
-	SPI0->SPI_CSR[0] = (clk << 8) + (8 << 4)
+	int32_t clk = div_ceil(sysclk_get_cpu_hz(), 500000); // 0.5MHz (approx)
+	SPI0->SPI_CSR[0] = (clk << 8) + (8 << 4) + 2;
 }
 
 void init(void) {

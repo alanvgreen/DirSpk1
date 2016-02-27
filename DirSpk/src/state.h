@@ -25,7 +25,7 @@ typedef struct {
 	xQueueHandle encoderDebugQueue;
 	
 	// Mutex for SPI is being used
-	xSemaphoreHandle usingSpi;
+	xSemaphoreHandle spiMutex;
 	
 } GlobalState;
 

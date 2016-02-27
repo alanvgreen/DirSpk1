@@ -13,6 +13,10 @@
 // Assert true or blink
 #define ASSERT_BLINK(c, l, s) { if (!c) fatalBlink(l, s); }
 
+// Blink out a pattern to singnal error.
+extern void errorBlink(short longBlinks, short shortBlinks);
+
+
 // Blink out a pattern in death.
 extern void fatalBlink(short longBlinks, short shortBlinks);
 

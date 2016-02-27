@@ -107,6 +107,7 @@ C_SRCS +=  \
 ../src/ASF/common/services/freertos/sam/freertos_uart_serial.c \
 ../src/ASF/common/utils/interrupt/interrupt_sam_nvic.c \
 ../src/ASF/sam/boards/arduino_due_x/init.c \
+../src/ASF/sam/boards/arduino_due_x/led.c \
 ../src/ASF/sam/drivers/adc/adc.c \
 ../src/ASF/sam/drivers/adc/adc_sam3u.c \
 ../src/ASF/sam/drivers/dacc/dacc.c \
@@ -153,6 +154,7 @@ src/ASF/common/services/freertos/sam/freertos_peripheral_control.o \
 src/ASF/common/services/freertos/sam/freertos_uart_serial.o \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.o \
 src/ASF/sam/boards/arduino_due_x/init.o \
+src/ASF/sam/boards/arduino_due_x/led.o \
 src/ASF/sam/drivers/adc/adc.o \
 src/ASF/sam/drivers/adc/adc_sam3u.o \
 src/ASF/sam/drivers/dacc/dacc.o \
@@ -192,6 +194,7 @@ src/ASF/common/services/freertos/sam/freertos_peripheral_control.o \
 src/ASF/common/services/freertos/sam/freertos_uart_serial.o \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.o \
 src/ASF/sam/boards/arduino_due_x/init.o \
+src/ASF/sam/boards/arduino_due_x/led.o \
 src/ASF/sam/drivers/adc/adc.o \
 src/ASF/sam/drivers/adc/adc_sam3u.o \
 src/ASF/sam/drivers/dacc/dacc.o \
@@ -231,6 +234,7 @@ src/ASF/common/services/freertos/sam/freertos_peripheral_control.d \
 src/ASF/common/services/freertos/sam/freertos_uart_serial.d \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.d \
 src/ASF/sam/boards/arduino_due_x/init.d \
+src/ASF/sam/boards/arduino_due_x/led.d \
 src/ASF/sam/drivers/adc/adc.d \
 src/ASF/sam/drivers/adc/adc_sam3u.d \
 src/ASF/sam/drivers/dacc/dacc.d \
@@ -270,6 +274,7 @@ src/ASF/common/services/freertos/sam/freertos_peripheral_control.d \
 src/ASF/common/services/freertos/sam/freertos_uart_serial.d \
 src/ASF/common/utils/interrupt/interrupt_sam_nvic.d \
 src/ASF/sam/boards/arduino_due_x/init.d \
+src/ASF/sam/boards/arduino_due_x/led.d \
 src/ASF/sam/drivers/adc/adc.d \
 src/ASF/sam/drivers/adc/adc_sam3u.d \
 src/ASF/sam/drivers/dacc/dacc.d \
@@ -318,6 +323,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

@@ -29,6 +29,16 @@ static void blinkPattern(short initDelay, short count, short offTime, short onTi
 	}
 }
 
+// Blink out a pattern for warnings
+void errorBlink(short longBlinks, short shortBlinks) {
+	blinkPattern(1000, 20, 25, 25);
+	blinkPattern(600, longBlinks, 400, 600);
+	blinkPattern(700, 10, 25, 25);
+	blinkPattern(400, shortBlinks, 600, 100);
+	
+	ioport_set_pin_level(LED0_GPIO, false);
+}
+
 // Blink out a pattern in death.
 void fatalBlink(short longBlinks, short shortBlinks) {
 	// Turn off all interrupt handling
@@ -36,9 +46,6 @@ void fatalBlink(short longBlinks, short shortBlinks) {
 	
 	// Blink the lights
 	for (;;) {
-		blinkPattern(1000, 20, 25, 25);
-		blinkPattern(600, longBlinks, 400, 600);
-		blinkPattern(700, 10, 25, 25);
-		blinkPattern(400, shortBlinks, 600, 100);
+		errorBlink(longBlinks, shortBlinks);
 	}
 }

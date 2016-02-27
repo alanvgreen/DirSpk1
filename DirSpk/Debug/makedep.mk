@@ -12,6 +12,8 @@ src\ASF\common\utils\interrupt\interrupt_sam_nvic.c
 
 src\ASF\sam\boards\arduino_due_x\init.c
 
+src\ASF\sam\boards\arduino_due_x\led.c
+
 src\ASF\sam\drivers\adc\adc.c
 
 src\ASF\sam\drivers\adc\adc_sam3u.c
