@@ -164,7 +164,7 @@ static void initSpi0(void) {
 	// (Though keep in mind MCP4261 requires ~10ms delay after writing NVRAM)
 	// 16 bit transfers
 	// clock polarity, phase = 00
-	int32_t clk = div_ceil(sysclk_get_cpu_hz(), 500000); // 0.5MHz (approx)
+	int32_t clk = div_ceil(sysclk_get_cpu_hz(), 10000000); // 10MHz (approx)
 	SPI0->SPI_CSR[0] = (clk << 8) + (8 << 4) + 2;
 }
 

@@ -26,11 +26,23 @@ static char const *MSG_SPI_BUSY = "SPI mutex is busy. Please Try again.\r\n";
 static char const *MSG_SPI_MUTEX_ERROR = "Could not release SPI mutex.\r\n";
 static char const *MSG_POT_ADDR_NOT_VALID = "Addr param must be between 0 and 0xf.\r\n";
 static char const *MSG_POT_VALUE_NOT_VALID = "Value param must be between 0 and 0x1ff.\r\n";
+static char const *MSG_OK = "OK";
+static char const *MSG_ERROR = "*** ERROR ***";
+static char const *MSG_Y = "Y";
+static char const *MSG_N = "N";
+
+static char const POT_REG_NAMES[6][7] = {
+	"R0    ",
+	"R1    ",
+	"NVR0  ",
+	"NVR1  ",
+	"STATUS",
+	"TCON  "
+};
 
 static char const *LABEL_ENC_NONE = "---";
 static char const *LABEL_ENC_CW = "CW ";
 static char const *LABEL_ENC_CCW = "CCW";
-
 
 // Transmit buffer
 #define txBufSize 1024
@@ -311,7 +323,31 @@ const int8_t *pcCommandString) {
 		uint32_t datum = (addr << 12) + (3 << 10);
 		uint32_t result = spiSendReceive(datum);
 		if (result & 0x200) {
-			snprintf((char *) txBuf, txBufSize, "0x%02x: 0x%03lx (0x%04lx)\r\n", addr, result & 0x1ff, result);
+			// Show buffer name and value
+			snprintf((char *) txBuf, txBufSize, "0x%02x: 0x%03lx (0x%04lx)", 
+			    addr, result & 0x1ff, result);
+			if (addr <= 5) {
+				int len = strnlen((char *) txBuf, txBufSize);
+				char *txp = (char *) txBuf + len;
+				int txlen = txBufSize - len;
+				if (addr < 4) {
+					snprintf(txp, txlen, " %s: %3ld", POT_REG_NAMES[addr], result & 0x1ff);
+				} else if (addr == 4) {
+					snprintf(txp, txlen, " %s: R1 %s, R0 %s",
+					    POT_REG_NAMES[addr],
+						(result & 0xf0) == 0xf0 ? MSG_OK : MSG_ERROR,
+						(result & 0x0f) == 0x0f ? MSG_OK : MSG_ERROR);
+				} else if (addr == 5) {
+					snprintf(txp, txlen, " %s: EEWA=%s, WL1=%s, WL0=%s, SHDN=%s, WP=%s",
+						POT_REG_NAMES[addr],
+						result & 0x10 ? MSG_Y : MSG_N,
+						result & 0x08 ? MSG_Y : MSG_N,
+						result & 0x04 ? MSG_Y : MSG_N,
+						result & 0x02 ? MSG_Y : MSG_N,
+						result & 0x01 ? MSG_Y : MSG_N);
+				}
+			}
+			strncat((char *) txBuf, CRLF, txBufSize);
 		} else {
 			snprintf((char *) txBuf, txBufSize, "0x%02x: ERR (0x%04lx)\r\n", addr, result);
 		}
@@ -389,8 +425,8 @@ static CLI_Command_Definition_t allCommands[] = {
 		1
 	},
 	{
-		USTR("potdump"),
-		USTR("potdump: Lists value of all pot registers.\r\n"),
+		USTR("pot"),
+		USTR("pot: Lists value of all pot registers.\r\n"),
 		potDumpCommand,
 		0
 	},
