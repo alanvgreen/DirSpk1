@@ -16,21 +16,28 @@ static void initGpio(void) {
 	// PA2 = A7 = ADC channel 0
 	ioport_set_pin_dir(PIO_PA2_IDX, IOPORT_DIR_INPUT);
 	
+	// PA25,26,27,28 = MISO, MOSI, SCK, SPIOCS0
+	const int spiPins = 0xf << 25;
+	ioport_set_port_mode(PIOA, spiPins, IOPORT_MODE_MUX_A);
+	ioport_disable_port(PIOA, spiPins)
+	
 	// PB15 = DAC0
 	ioport_set_pin_mode(PIO_PB15_IDX, IOPORT_MODE_MUX_B);
+	ioport_disable_pin(PIO_PB15_IDX);
 	
 	// PIOB - PB27 = D13 = LED
 	ioport_set_pin_level(LED0_GPIO, false);
 	ioport_set_pin_dir(LED0_GPIO, IOPORT_DIR_OUTPUT);
 	
 	// PIOC - PC12-PC19 = D51-D44 for encoders
+	// Uses pio_ API since and interrupt handler is needed
 	pio_set_input(PIOC, ENCODER_PINS, PIO_PULLUP);
-	pio_set_debounce_filter(PIOC, ENCODER_PINS, 500); // Debounce at 500Hz
+	pio_set_debounce_filter(PIOC, ENCODER_PINS, 500); // De-bounce at 500Hz
 	pio_handler_set(PIOC, ID_PIOC, ENCODER_PINS, 0, encoderPIOCHandler);
 	pio_handler_set_priority(PIOC, ID_PIOC, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
 	pio_enable_interrupt(PIOC, ENCODER_PINS);
 	
-	// Make a fake call to the interrupt handler to force intialization
+	// Make a fake call to the interrupt handler to force initialization
 	encoderPIOCHandler(ID_PIOC, 0);
 }
 
@@ -140,6 +147,26 @@ static void initDac(void) {
 	dacc_disable_channel(DACC, 0);
 }
 
+// Set up SPI controller 0
+static void initSpi0(void) {
+	pmc_enable_periph_clk(ID_SPI0);
+	// Enable
+	SPI0->SPI_CR = 0x1; 
+	
+	// Master, variable select, no decode chip select, no fault detection,
+	// no wait read before transfer.
+	// DELAY = 6;
+	SPI0->SPI_MR = (6 << 24) + 0x21; 
+	
+	// SPI Chip 0
+	// No delay between consecutive transfers. 
+	// (Though keep in mind MCP4261 requires ~10ms delay after writing NVRAM)
+	// 16 bit transfers
+	// clock polarity, phase = 00
+	int32_t clk = div_ceil(100000,  sysclk_get_cpu_hz()); // 0.1MHz (approx)
+	SPI0->SPI_CSR[0] = (clk << 8) + (8 << 4)
+}
+
 void init(void) {
 	sysclk_init();
 	NVIC_SetPriorityGrouping(0);
@@ -150,4 +177,5 @@ void init(void) {
 	initUart();
 	initTimers();
 	initDac();
+	initSpi0();
 }

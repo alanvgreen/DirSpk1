@@ -24,6 +24,9 @@ typedef struct {
 	// Debug queue. All ticks go in here, although queue may overflow
 	xQueueHandle encoderDebugQueue;
 	
+	// Mutex for SPI is being used
+	xSemaphoreHandle usingSpi;
+	
 } GlobalState;
 
 // Global state may be read directly from this variable
