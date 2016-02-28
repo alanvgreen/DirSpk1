@@ -18,8 +18,9 @@ void TC0_Handler(void) {
 	clearTcBit();
 	
 	// Temporary code - read ADC, write DAC
-	uint32_t data = adc_get_channel_value(ADC, 0);
-	dacc_write_conversion_data(DACC, data);
+	uint32_t data0 = adc_get_channel_value(ADC, 0);
+	uint32_t data1 = adc_get_channel_value(ADC, 1);
+	dacc_write_conversion_data(DACC, (data1 + data0) / 2);
 	
 	// Get a value
 	// Look at audio mode

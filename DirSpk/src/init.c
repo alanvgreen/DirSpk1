@@ -58,11 +58,12 @@ static void initAdc(void) {
 	// Turn on bias current, since we're doing many conversions
 	adc_set_bias_current(ADC, 1);
 	
-	// Not enabling any channels just yet, but here's how to do it.
+	// Enable channels 0 and 1
 	adc_enable_channel(ADC, ADC_CHANNEL_0);
+	adc_enable_channel(ADC, ADC_CHANNEL_1);
 	
 	// Turn on temp sensor (channel 15)
-	adc_enable_ts(ADC);
+	// adc_enable_ts(ADC);
 	
 	// Start free run mode
 	adc_configure_trigger(ADC, ADC_TRIG_SW, 1);
