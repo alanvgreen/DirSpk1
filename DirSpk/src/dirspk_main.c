@@ -8,6 +8,7 @@
 #include "init.h"
 #include "spi.h"
 #include "state.h"
+#include "ui.h"
 #include "util.h"
 
 // The tick hook
@@ -24,6 +25,7 @@ int main(void) {
 	startCli();
 	startEncoders();
 	startSpi();
+    startUi();
 	
 	// Start Task scheduler
 	vTaskStartScheduler();

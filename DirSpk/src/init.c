@@ -37,9 +37,6 @@ static void initGpio(void) {
 	pio_handler_set(PIOC, ID_PIOC, ENCODER_PINS, 0, encoderPIOCHandler);
 	pio_handler_set_priority(PIOC, ID_PIOC, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
 	pio_enable_interrupt(PIOC, ENCODER_PINS);
-	
-	// Make a fake call to the interrupt handler to force initialization
-	encoderPIOCHandler(ID_PIOC, 0);
 }
 
 //
@@ -164,9 +161,11 @@ static void initSpi0(void) {
 	// No delay between consecutive transfers. 
 	// (Though keep in mind MCP4261 requires ~10ms delay after writing NVRAM)
 	// 16 bit transfers
-	// clock polarity, phase = 00
-	int32_t clk = div_ceil(sysclk_get_cpu_hz(), 10000000); // 10MHz (approx)
-	SPI0->SPI_CSR[0] = (clk << 8) + (8 << 4) + 2;
+	// clock polarity, phase = 
+	uint32_t f = 1 * 1000 * 1000; // 1MHz
+	int32_t clk = div_ceil(sysclk_get_cpu_hz(), f); // 1MHz (approx)
+	int32_t dlybct = div_ceil(sysclk_get_cpu_hz(), f * 32); // wait for a clock cycle before release cs
+	SPI0->SPI_CSR[0] = (dlybct << 24) + (clk << 8) + (8 << 4) + 2;
 }
 
 void init(void) {

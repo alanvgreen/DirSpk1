@@ -1183,6 +1183,12 @@
     <Compile Include="src\state.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\ui.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ui.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\util.c">
       <SubType>compile</SubType>
     </Compile>

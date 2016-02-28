@@ -5,6 +5,7 @@
 #include <asf.h>
 #include "encoder.h"
 #include "state.h"
+#include "ui.h"
 
 // States for state machine.
 // See http://www.buxtronix.net/2011/10/rotary-encoders-done-properly.html
@@ -55,14 +56,25 @@ static void encoderUpdate(int num, EncoderSignals curr) {
 		state->dirTicks = xTaskGetTickCount();
 		state->dir = dir;
 		
-		// Send move in queue
-		EncoderMove move = {
-			.num = num,
-			.when = state->dirTicks,
-			.dir = dir,
+		// Record a UI Event
+		UiEvent event = {
+			.type = UI_ENCODER,
+			.encMove = {
+				.num = num,
+				.when = state->dirTicks,
+				.dir = dir,
+			}
 		};
+		
 		signed portBASE_TYPE taskWoken = false;
-		xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue, &move, &taskWoken);
+		if (GLOBAL_STATE.uiQueue) {
+			if (!xQueueSendToBackFromISR(GLOBAL_STATE.uiQueue, &event, &taskWoken)) {
+				GLOBAL_STATE.uiQueueFullFlag = true;
+			}
+		}
+		if (GLOBAL_STATE.encoderDebugQueue) {
+			xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue, &event.encMove, &taskWoken);
+		}
 		if (taskWoken) {
 			vPortYieldFromISR();
 		}
@@ -83,4 +95,9 @@ void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
 // Start the encoder subsystem
 void startEncoders(void) {
 	GLOBAL_STATE.encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
+	
+	// Set encoders to state zero
+	for (int i = 0; i < NUM_ENCODERS; i++) {
+		GLOBAL_STATE.encoders[i].machine = 0;
+	}
 }

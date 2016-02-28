@@ -139,6 +139,7 @@ C_SRCS +=  \
 ../src/init.c \
 ../src/spi.c \
 ../src/state.c \
+../src/ui.c \
 ../src/util.c
 
 
@@ -186,6 +187,7 @@ src/encoder.o \
 src/init.o \
 src/spi.o \
 src/state.o \
+src/ui.o \
 src/util.o
 
 OBJS_AS_ARGS +=  \
@@ -226,6 +228,7 @@ src/encoder.o \
 src/init.o \
 src/spi.o \
 src/state.o \
+src/ui.o \
 src/util.o
 
 C_DEPS +=  \
@@ -266,6 +269,7 @@ src/encoder.d \
 src/init.d \
 src/spi.d \
 src/state.d \
+src/ui.d \
 src/util.d
 
 C_DEPS_AS_ARGS +=  \
@@ -306,6 +310,7 @@ src/encoder.d \
 src/init.d \
 src/spi.d \
 src/state.d \
+src/ui.d \
 src/util.d
 
 OUTPUT_FILE_PATH +=DirSpk.elf
@@ -323,6 +328,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

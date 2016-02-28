@@ -7,6 +7,9 @@
 // Start the SPI subsystem
 void startSpi(void);
 
+// Executes fn while holding the SPI mutex
+void spiExclusive(void (*fn)(void));
+
 // Send a datum, receive a datum.
 // Channel number must be encoded in bits 19-16
 // Acquire semaphore before using 

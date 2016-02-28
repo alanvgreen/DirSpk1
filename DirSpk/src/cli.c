@@ -36,8 +36,8 @@ static char const POT_REG_NAMES[6][7] = {
 	"R1    ",
 	"NVR0  ",
 	"NVR1  ",
-	"STATUS",
-	"TCON  "
+	"TCON  ",
+	"STATUS"
 };
 
 static char const *LABEL_ENC_NONE = "---";
@@ -135,7 +135,10 @@ static void writeDetailedEncoderState(int n) {
 
 // Write the current global state
 static void writeGlobalStateSummary(void) {
-	snprintf((char*) txBuf, txBufSize, "\r\n");
+	snprintf((char*) txBuf, txBufSize, "UIQ(%s), Vol(%d, %d)\r\n",
+		GLOBAL_STATE.uiQueueFullFlag ? MSG_ERROR : MSG_OK,
+		GLOBAL_STATE.volume0,
+		GLOBAL_STATE.volume1);
 	consoleWriteTxBuf();
 }
 
@@ -380,6 +383,7 @@ const int8_t *pcCommandString) {
 		consoleWrite(MSG_POT_VALUE_NOT_VALID);
 		return pdFALSE;
 	}
+	
 	// Take the mutex
 	if (!xSemaphoreTake(GLOBAL_STATE.spiMutex, 1000)) {
 		consoleWrite(MSG_SPI_BUSY);
@@ -393,6 +397,7 @@ const int8_t *pcCommandString) {
 	    datum, addr, val, result);
 	consoleWriteTxBuf();
 	
+	// Return Mutex
 	if (!xSemaphoreGive(GLOBAL_STATE.spiMutex)) {
 		consoleWrite(MSG_SPI_MUTEX_ERROR);
 		return pdFALSE;
