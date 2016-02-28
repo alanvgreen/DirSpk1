@@ -187,9 +187,6 @@ static int8_t const *findNextParam(int8_t const *p) {
 static int parseInt(int8_t const *p, int base) {
 	int8_t *end;
 	long val = strtol((char const *) p, (char **) &end, base);
-	snprintf((char *) txBuf, txBufSize, "[%s], [%s] -> %ld\r\n", 
-	    (char *)p, (char *) end, val);
-	consoleWriteTxBuf();
 
 	if (p == end) {
 		return -1; // nothing to convert

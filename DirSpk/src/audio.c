@@ -17,6 +17,10 @@ void TC0_Handler(void) {
 	// Read status to indicate that interrupt has been handled
 	clearTcBit();
 	
+	// Temporary code - read ADC, write DAC
+	uint32_t data = adc_get_channel_value(ADC, 0);
+	dacc_write_conversion_data(DACC, data);
+	
 	// Get a value
 	// Look at audio mode
 	

@@ -59,7 +59,7 @@ static void initAdc(void) {
 	adc_set_bias_current(ADC, 1);
 	
 	// Not enabling any channels just yet, but here's how to do it.
-	// adc_enable_channel(ADC, ADC_CHANNEL_0);
+	adc_enable_channel(ADC, ADC_CHANNEL_0);
 	
 	// Turn on temp sensor (channel 15)
 	adc_enable_ts(ADC);
@@ -145,7 +145,7 @@ static void initDac(void) {
 		DACC_ACR_IBCTLCH0(0x02) |
 		DACC_ACR_IBCTLCH1(0x02) |
 		DACC_ACR_IBCTLDACCORE(0x01));
-	dacc_disable_channel(DACC, 0);
+	dacc_enable_channel(DACC, 0);
 }
 
 // Set up SPI controller 0
