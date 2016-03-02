@@ -55,9 +55,6 @@
 // From module: ADC - Analog-to-digital Converter
 #include <adc.h>
 
-// From module: Arduino Due/X LED support enabled
-#include <led.h>
-
 // From module: Common SAM compiler driver
 #include <compiler.h>
 #include <status_codes.h>
@@ -110,6 +107,9 @@
 // From module: PMC - Power Management Controller
 #include <pmc.h>
 #include <sleep.h>
+
+// From module: PWM - Pulse Width Modulation
+#include <pwm.h>
 
 // From module: Part identification macros
 #include <parts.h>

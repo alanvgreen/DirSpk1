@@ -3,6 +3,7 @@
 // General device initialization
 
 #include <asf.h>
+#include "audio.h"
 #include "encoder.h"
 #include "init.h"
 #include "util.h"
@@ -30,11 +31,18 @@ static void initGpio(void) {
 	ioport_set_pin_level(LED0_GPIO, false);
 	ioport_set_pin_dir(LED0_GPIO, IOPORT_DIR_OUTPUT);
 	
+	// PIOC - PC6,7 = D38,39 = PWML2 and PWMH2 
+	// We really only need one of these outputs, but for convenience during debugging, we'll get both.
+	const int pwmPins = 0x3 << 6;
+	ioport_set_port_mode(IOPORT_PIOC, pwmPins, IOPORT_MODE_MUX_B);
+	ioport_disable_port(IOPORT_PIOC, pwmPins);
+	
 	// PIOC - PC12-PC19 = D51-D44 for encoders
-	// Uses pio_ API since and interrupt handler is needed
+	// Uses pio_ API since an interrupt handler is needed
 	pio_set_input(PIOC, ENCODER_PINS, PIO_PULLUP);
 	pio_set_debounce_filter(PIOC, ENCODER_PINS, 500); // De-bounce at 500Hz
 	pio_handler_set(PIOC, ID_PIOC, ENCODER_PINS, 0, encoderPIOCHandler);
+	// Not quite the lowest priority
 	pio_handler_set_priority(PIOC, ID_PIOC, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
 	pio_enable_interrupt(PIOC, ENCODER_PINS);
 }
@@ -108,6 +116,7 @@ static void initTimers(void) {
 	
 	// TC0 channel 0 provides a 40kHz clock to power audio out.
 	// on RC compare, triggers a high priority interrupt
+	/* TODO: remove this when ready
 	tc_find_mck_divisor(40000, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
 	tc_init(TC0, 0, ul_tcclks | TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC);
 	tc_write_rc(TC0, 0, (ul_sysclk / ul_div) / 40000);
@@ -115,15 +124,44 @@ static void initTimers(void) {
 	NVIC_EnableIRQ((IRQn_Type)ID_TC0);
 	tc_enable_interrupt(TC0, 0, TC_IER_CPCS);
 	tc_start(TC0, 0);
+	*/
 	
 	// TC0 channel 1  provides a variable frequency clock for generating audible 
 	// tones up to 10kHz. The audio generation task is responsible for configuring it,
 	// and it is read via the MTIOA bit.
+	/* TODO: figure out how we will generate tones.
 	pmc_enable_periph_clk(ID_TC1);
 	tc_find_mck_divisor(10000, ul_sysclk, &ul_div, &ul_tcclks, ul_sysclk);
 	tc_init(TC0, 1, ul_tcclks | TC_CMR_CPCTRG);
 	tc_write_rc(TC0, 1, (ul_sysclk / ul_div) / 10000);
 	tc_start(TC0, 1);
+	*/
+}
+
+// Init PWM
+static void initPwm(void) {
+	pmc_enable_periph_clk(ID_PWM);
+	
+	// Channel 2: 40kHz period, 50% duty cycle
+	pwm_channel_disable(PWM, PWM_CHANNEL_2);
+	pmc_enable_periph_clk(ID_PWM);
+		
+	// Configure channel 2
+	pwm_channel_t instance = {
+		.channel = PWM_CHANNEL_2,
+		.ul_prescaler = PWM_CMR_CPRE_MCK, // 42MHz
+		.alignment = PWM_ALIGN_LEFT,
+		.polarity = PWM_LOW,
+		.ul_period = US_PERIOD,
+		.ul_duty = US_PERIOD / 2,
+	};
+	pwm_channel_init(PWM, &instance);
+	pwm_channel_enable(PWM, PWM_CHANNEL_2);
+		
+	// Enable interrupts
+	PWM->PWM_IER1 = (1 << 2);
+	NVIC_SetPriority((IRQn_Type)ID_PWM, 1); // Highest priority (lowest number) except for NMI
+	NVIC_EnableIRQ((IRQn_Type)ID_PWM);
 }
 
 
@@ -177,6 +215,7 @@ void init(void) {
 	initAdc();
 	initUart();
 	initTimers();
+	initPwm();
 	initDac();
 	initSpi0();
 }
