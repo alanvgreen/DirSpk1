@@ -109,10 +109,10 @@ static void initUart(void) {
 
 // Initialize TC0 channel 0 and 1
 static void initTimers(void) {
-	pmc_enable_periph_clk(ID_TC0);
-	
-	uint32_t ul_sysclk = sysclk_get_cpu_hz(); 
-	uint32_t ul_div, ul_tcclks;
+// 	pmc_enable_periph_clk(ID_TC0);
+// 	
+// 	uint32_t ul_sysclk = sysclk_get_cpu_hz(); 
+// 	uint32_t ul_div, ul_tcclks;
 	
 	// TC0 channel 0 provides a 40kHz clock to power audio out.
 	// on RC compare, triggers a high priority interrupt
@@ -149,7 +149,7 @@ static void initPwm(void) {
 	// Configure channel 2
 	pwm_channel_t instance = {
 		.channel = PWM_CHANNEL_2,
-		.ul_prescaler = PWM_CMR_CPRE_MCK, // 42MHz
+		.ul_prescaler = PWM_CMR_CPRE_MCK, // 84MHz
 		.alignment = PWM_ALIGN_LEFT,
 		.polarity = PWM_LOW,
 		.ul_period = US_PERIOD,

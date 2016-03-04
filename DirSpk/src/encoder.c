@@ -40,7 +40,7 @@
 
 // State lookup table A with row per state, and transitions indexed by EncoderSwitches
 // Value encoded in state machine is (direction to output + (next_state << 4))
-static int8_t stateTableA[][4] = {
+static uint8_t stateTableA[][4] = {
 	{0x10, 0x00, 0x00, 0x40}, // State 0: Lost
 	{0x10, 0x20, 0x30, 0x40}, // State 1: at 00
 	{0x10, 0x20, 0x00, 0x41}, // State 2: 00->01
@@ -70,7 +70,7 @@ static int8_t stateTableA[][4] = {
 
 // State lookup table B with row per state, and transitions indexed by EncoderSwitches
 // Value encoded in state machine is (direction to output + (next_state << 4))
-static int8_t stateTableB[][4] = {
+static uint8_t stateTableB[][4] = {
 	{0x10, 0x00, 0x00, 0x00}, // State 0: Lost
 	{0x10, 0x20, 0x50, 0x00}, // State 1: at 00
 	{0x10, 0x20, 0x00, 0x30}, // State 2: 00->01

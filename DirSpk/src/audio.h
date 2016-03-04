@@ -8,8 +8,4 @@
 // Ultrasonic PWM period = 84000000 / 40000 cycles
 #define US_PERIOD 2100
 
-
-
-
-
 #endif /* AUDIO_H_ */
