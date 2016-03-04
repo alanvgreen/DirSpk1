@@ -1,8 +1,8 @@
 // audio.c
 // Routines for Audio output.
-#include <asf.h>
-#include "audio.h"
-#include "util.h"
+
+#include "decls.h"
+
 
 // 40kHz sampler.
 //

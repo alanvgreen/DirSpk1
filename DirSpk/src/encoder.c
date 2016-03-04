@@ -2,10 +2,7 @@
 // 
 // Handles rotary encoders on PC12-PC19
 
-#include <asf.h>
-#include "encoder.h"
-#include "state.h"
-#include "ui.h"
+#include "decls.h"
 
 // States for encoder state machine.
 // See http://www.buxtronix.net/2011/10/rotary-encoders-done-properly.html

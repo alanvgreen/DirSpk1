@@ -2,8 +2,7 @@
 * util.c
 */
 
-#include <asf.h>
-#include "util.h"
+#include "decls.h"
 
 // Stack overflow - blink out a pattern
 extern void vApplicationStackOverflowHook( xTaskHandle, signed char *);

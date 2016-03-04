@@ -2,11 +2,7 @@
 //
 // General device initialization
 
-#include <asf.h>
-#include "audio.h"
-#include "encoder.h"
-#include "init.h"
-#include "util.h"
+#include "decls.h"
 
 //
 // Initialize pins for GPIO or peripherals

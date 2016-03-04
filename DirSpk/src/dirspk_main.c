@@ -2,14 +2,7 @@
 // Dirspk1 Main
 //
 
-#include <asf.h>
-#include "cli.h"
-#include "encoder.h"
-#include "init.h"
-#include "spi.h"
-#include "state.h"
-#include "ui.h"
-#include "util.h"
+#include "decls.h"
 
 // The tick hook
 extern void vApplicationTickHook(void);

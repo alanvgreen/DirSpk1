@@ -2,11 +2,7 @@
 //
 // The UI handling task and code
 
-#include <asf.h>
-#include "spi.h"
-#include "state.h"
-#include "ui.h"
-#include "util.h"
+#include "decls.h"
 
 // Update gain to pot. Execute while holding the SPI mutex. 
 static void updateGain(void) {

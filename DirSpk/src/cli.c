@@ -1,15 +1,6 @@
 // cli.c
 
-#include <ctype.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <asf.h>
-#include "cli.h"
-#include "init.h"
-#include "spi.h"
-#include "state.h"
-#include "util.h"
+#include "decls.h"
 
 // Constant strings
 static char const *WELCOME = " - DirSpk1 Command Server - \r\nType \"help\" for help.\r\n";

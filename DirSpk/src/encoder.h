@@ -19,7 +19,7 @@ typedef enum {
 // Encoder switch states - kept in 2LSB
 typedef uint8_t EncoderSignals;
 
-// Encoder state, Bits 3,2 = last. Bits 1,0 = prev to last
+// Encoder state
 typedef struct {
 	// The state machine to use
 	uint8_t (*table)[4];

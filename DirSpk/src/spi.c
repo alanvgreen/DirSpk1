@@ -1,8 +1,6 @@
 // spi.c
-#include <asf.h>
-#include "spi.h"
-#include "state.h"
-#include "util.h"
+
+#include "decls.h"
 
 // Start the SPI subsystem
 void startSpi(void) {

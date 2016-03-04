@@ -1252,6 +1252,9 @@
     <None Include="src\config\conf_clock.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\decls.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\dirspk_main.c">
       <SubType>compile</SubType>
     </Compile>
