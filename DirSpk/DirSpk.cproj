@@ -1114,13 +1114,7 @@
     <Compile Include="src\audio.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\audio.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\cli.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\cli.h">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\thirdparty\CMSIS\Lib\GCC\libarm_cortexM3l_math.a">
@@ -1261,37 +1255,19 @@
     <Compile Include="src\encoder.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\encoder.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\init.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\init.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\spi.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\spi.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\state.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\state.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ui.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\ui.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\util.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\util.h">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\asf.h">

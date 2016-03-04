@@ -1,15 +1,24 @@
 // encoder.c
 // 
 // Handles rotary encoders on PC12-PC19
+//
+// Runs an interrupt on change in encoder GPIO pin inputs. When the interrupt logic determines
+// that there has been a direction change, items are placed on RTOS queues for interpretation 
+// by the UI and CLI tasks.
 
 #include "decls.h"
 
-// States for encoder state machine.
-// See http://www.buxtronix.net/2011/10/rotary-encoders-done-properly.html
-//
 // An encoder is a device that indicates movement clockwise or counter-clockwise. By itself, it
 // has no absolute position. Encoders have two switches each providing a binary output signal, 
 // making four combinations - 00, 01, 10, and 11.
+//
+// To properly interpret these signals requires knowing not just the current value of the two 
+// output switches but also the previous values. These values are tracked using a small state
+// machine. I thought about this for a long time and ended up completely agreeing with the principles
+// put forth by Ben Buxton at the link below. I then borrowed implementation concepts from his
+// code as well.
+//
+// See http://www.buxtronix.net/2011/10/rotary-encoders-done-properly.html
 //
 // For our purposes, there are two kinds of encoders:
 //   A) Those designed to signal a move at both position 00 and 11, and
@@ -90,40 +99,43 @@ static void encoderUpdate(int num, EncoderSignals signals) {
 	// Work out what to do next
 	EncoderDirection dir = instruction & 3;
 	
-	// Handle the direction chosen
-	if (dir != ENC_NONE) {
-		// Record in encoder record
-		encoder->dirTicks = xTaskGetTickCount();
-		encoder->dir = dir;
+	// No direction sensed - get out now
+	if (dir == ENC_NONE) {
+		return;
+	}
+	
+	// Record in encoder record
+	encoder->dirTicks = xTaskGetTickCount();
+	encoder->dir = dir;
 		
-		// Record a UI Event
-		UiEvent event = {
-			.type = UI_ENCODER,
-			.encMove = {
-				.num = num,
-				.when = encoder->dirTicks,
-				.dir = dir,
-			}
-		};
+	// Record a UI Event
+	UiEvent event = {
+		.type = UI_ENCODER,
+		.encMove = {
+			.num = num,
+			.when = encoder->dirTicks,
+			.dir = dir,
+		}
+	};
 		
-		signed portBASE_TYPE taskWoken = false;
-		if (GLOBAL_STATE.uiQueue) {
-			if (!xQueueSendToBackFromISR(GLOBAL_STATE.uiQueue, &event, &taskWoken)) {
-				GLOBAL_STATE.uiQueueFullFlag = true;
-			}
+	portBASE_TYPE taskWoken = false;
+	if (GLOBAL_STATE.uiQueue) {
+		if (!xQueueSendToBackFromISR(GLOBAL_STATE.uiQueue, &event, &taskWoken)) {
+			GLOBAL_STATE.uiQueueFullFlag = true;
 		}
-		if (GLOBAL_STATE.encoderDebugQueue) {
-			xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue, &event.encMove, &taskWoken);
-		}
-		if (taskWoken) {
-			vPortYieldFromISR();
-		}
+	}
+	if (GLOBAL_STATE.encoderDebugQueue) {
+		xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue, 
+			&event.encMove, &taskWoken);
+	}
+	if (taskWoken) {
+		vPortYieldFromISR();
 	}
 }
 
 // Handle PIOC interrupt
 void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
-	// Get new values of pins
+	// Get new values of pins from bits 19-12
 	uint32_t curr = PIOC->PIO_PDSR >> 12;
 	
 	for (int i = 0; i < NUM_ENCODERS; i++) {
@@ -134,14 +146,12 @@ void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
 
 // Start the encoder subsystem
 void startEncoders(void) {
+	// Create the debug queue
 	GLOBAL_STATE.encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
+	
+	// Set up the state table for each encoder
 	GLOBAL_STATE.encoders[0].table = stateTableB;
 	GLOBAL_STATE.encoders[1].table = stateTableB;
 	GLOBAL_STATE.encoders[2].table = stateTableA;
 	GLOBAL_STATE.encoders[3].table = stateTableA;
-	
-	// Set encoders to state zero
-	for (int i = 0; i < NUM_ENCODERS; i++) {
-		GLOBAL_STATE.encoders[i].state = 0;
-	}
 }

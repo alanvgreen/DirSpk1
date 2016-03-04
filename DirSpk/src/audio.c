@@ -3,7 +3,6 @@
 
 #include "decls.h"
 
-
 // 40kHz sampler.
 //
 // Runs at too high a priority to call FreeRTOS routines.
