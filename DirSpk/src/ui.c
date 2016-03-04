@@ -8,9 +8,9 @@
 #include "ui.h"
 #include "util.h"
 
-// Update volume to pot. Execute while holding the SPI mutex. 
-static void updateVolume(void) {
-	uint16_t vol = GLOBAL_STATE.volume0;
+// Update gain to pot. Execute while holding the SPI mutex. 
+static void updateGain(void) {
+	uint16_t vol = GLOBAL_STATE.gain0;
 	// Set reg0
 	spiSendReceive((0 << 12) + vol);
 	// Set reg1
@@ -22,11 +22,11 @@ static void updateVolume(void) {
 static void uiHandleEncoderEvent(EncoderMove *p) {
 	// Set both pots to vol0
 	if (p->num == 3) {
-		int16_t vol = GLOBAL_STATE.volume0;
+		int16_t vol = GLOBAL_STATE.gain0;
 		vol += (p->dir == ENC_CW) ? 4 : -4;
 		vol = max(min(vol, 0x100), 0);
-		GLOBAL_STATE.volume0 = GLOBAL_STATE.volume1 = vol;
-		spiExclusive(updateVolume);
+		GLOBAL_STATE.gain0 = GLOBAL_STATE.gain1 = vol;
+		spiExclusive(updateGain);
 	}
 	
 	// TODO: master + fade
@@ -37,10 +37,10 @@ static void uiHandleEncoderEvent(EncoderMove *p) {
 // Get volume from pot. Execute while holding the SPI mutex.
 static void getVolume(void) {
 	// Read r0
-	GLOBAL_STATE.volume0 = spiSendReceive(0x0c00) & 0x1ff;
+	GLOBAL_STATE.gain0 = spiSendReceive(0x0c00) & 0x1ff;
 
 	// Read r1
-	GLOBAL_STATE.volume1 = spiSendReceive(0x1c00) & 0x1ff;	
+	GLOBAL_STATE.gain1 = spiSendReceive(0x1c00) & 0x1ff;	
 }
 // The console task.
 static void uiTask(void *pvParameters) {

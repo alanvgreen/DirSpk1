@@ -129,7 +129,7 @@ static const char *encoderLabel(EncoderDirection d) {
 static void writeDetailedEncoderState(int n) {
 	EncoderState *s = GLOBAL_STATE.encoders + n;
 	snprintf((char*) txBuf, txBufSize, "%s, %d, %hhx\r\n", 
-	    encoderLabel(s->dir), (int) s->dirTicks, s->machine);
+	    encoderLabel(s->dir), (int) s->dirTicks, s->state);
 	consoleWriteTxBuf();
 }
 
@@ -137,8 +137,8 @@ static void writeDetailedEncoderState(int n) {
 static void writeGlobalStateSummary(void) {
 	snprintf((char*) txBuf, txBufSize, "UIQ(%s), Vol(%d, %d)\r\n",
 		GLOBAL_STATE.uiQueueFullFlag ? MSG_ERROR : MSG_OK,
-		GLOBAL_STATE.volume0,
-		GLOBAL_STATE.volume1);
+		GLOBAL_STATE.gain0,
+		GLOBAL_STATE.gain1);
 	consoleWriteTxBuf();
 }
 

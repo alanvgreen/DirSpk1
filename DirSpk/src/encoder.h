@@ -21,8 +21,11 @@ typedef uint8_t EncoderSignals;
 
 // Encoder state, Bits 3,2 = last. Bits 1,0 = prev to last
 typedef struct {
+	// The state machine to use
+	uint8_t (*machine)[4];
+	
 	// State machine state
-	uint8_t machine;
+	uint8_t state;
 	
 	// Last direction and timestamp (for debugging)
 	portTickType dirTicks;

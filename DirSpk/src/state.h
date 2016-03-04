@@ -17,8 +17,8 @@ typedef struct {
 	// UiQueue for events from encoders, touch, etc. 
 	xQueueHandle uiQueue;
 	
-	// Volume for channels zero and 1. Owner: UI task.
-	uint16_t volume0, volume1;
+	// Gain for channels zero and 1. Owner: UI task.
+	uint16_t gain0, gain1;
 	
 	// Whether UIQueue has ever been full. Set only. Owner: any sender to uiQueue.
 	bool uiQueueFullFlag;

@@ -7,16 +7,26 @@
 #include "state.h"
 #include "ui.h"
 
-// States for state machine.
+// States for encoder state machine.
 // See http://www.buxtronix.net/2011/10/rotary-encoders-done-properly.html
 //
-// The encoder has two binary output signals, making four combinations 00, 01, 10, and 11.
+// An encoder is a device that indicates movement clockwise or counter-clockwise. By itself, it
+// has no absolute position. Encoders have two switches each providing a binary output signal, 
+// making four combinations - 00, 01, 10, and 11.
 //
-// Four sequences cause a direction to be sensed and output from the state machine.
+// For our purposes, there are two kinds of encoders:
+//   A) Those designed to signal a move at both position 00 and 11, and
+//   B) Those designed to only indicate a move at position 00.
+//
+// For type A converters, there are four sequences of encoder position that are relevant to indicating
+// a movement:
 // 00->01->11: ENC_CW (move clockwise)
 // 00->10->11: ENC_CCW
 // 11->01->00: ENC_CCW
 // 11->10->00: ENC_CW
+//
+// Simply tracking (say) 01->11 is insufficient to indicate a clockwise movement as the sequence 11->01->11
+// does not indicate a movement - it could be the result of the encoder switch resting near a transition.
 //
 // To track these four sequences we need seven states.
 //
@@ -28,9 +38,9 @@
 // 5 = 11->01
 // 6 = 11->10
 
-// State lookup table with row per state, and transitions indexed by EncoderSwitches
+// State lookup table A with row per state, and transitions indexed by EncoderSwitches
 // Value encoded in state machine is (direction to output + (next_state << 4))
-static int8_t state_table[][4] = {
+static int8_t stateTableA[][4] = {
 	{0x10, 0x00, 0x00, 0x40}, // State 0: Lost
 	{0x10, 0x20, 0x30, 0x40}, // State 1: at 00
 	{0x10, 0x20, 0x00, 0x41}, // State 2: 00->01
@@ -40,12 +50,45 @@ static int8_t state_table[][4] = {
 	{0x11, 0x00, 0x60, 0x40}, // State 6: 11->10
 };
 
+//
+// Similarly, type B encoders have two sequences that indicate state change:
+// 00->01->11->10->00: ENC_CW
+// 00->10->11->01->00: ENC_CCW
+// 
+// It is allowed to step backwards through intermediates states so that:
+// 00->01->11->01->11->10->11->10->00 also indicates ENC_CW
+//
+// We use these states:
+// 0: Lost. Looking for 00
+// 1: At 00
+// 2: 00->01
+// 3: 00->01->11
+// 4: 00->01->11->10
+// 5: 00->10
+// 6: 00->10->11
+// 7: 00->10->11->01
+
+// State lookup table B with row per state, and transitions indexed by EncoderSwitches
+// Value encoded in state machine is (direction to output + (next_state << 4))
+static int8_t stateTableB[][4] = {
+	{0x10, 0x00, 0x00, 0x00}, // State 0: Lost
+	{0x10, 0x20, 0x50, 0x00}, // State 1: at 00
+	{0x10, 0x20, 0x00, 0x30}, // State 2: 00->01
+	{0x10, 0x20, 0x40, 0x30}, // State 3: 00->01->11
+	{0x11, 0x00, 0x40, 0x30}, // State 4: 00->01->11->10
+	{0x10, 0x00, 0x50, 0x60}, // State 5: 00->10
+	{0x10, 0x70, 0x50, 0x60}, // State 6: 00->10->11
+	{0x12, 0x70, 0x00, 0x60}, // State 7: 00->10->11->01
+};
+
 // Update a single encoder
 // Executes from within an interrupt
-static void encoderUpdate(int num, EncoderSignals curr) {
-	EncoderState *state = GLOBAL_STATE.encoders + num;
-	uint8_t instruction = state_table[state->machine][curr];
-	state->machine = instruction >> 4;
+static void encoderUpdate(int num, EncoderSignals signals) {
+	EncoderState *encoder = GLOBAL_STATE.encoders + num;
+	
+	// Look up instruction in this encoder's state table
+	uint8_t instruction = encoder->table[encoder->state][signals];
+	encoder->state = instruction >> 4;
 		
 	// Work out what to do next
 	EncoderDirection dir = instruction & 3;
@@ -53,15 +96,15 @@ static void encoderUpdate(int num, EncoderSignals curr) {
 	// Handle the direction chosen
 	if (dir != ENC_NONE) {
 		// Record in encoder record
-		state->dirTicks = xTaskGetTickCount();
-		state->dir = dir;
+		encoder->dirTicks = xTaskGetTickCount();
+		encoder->dir = dir;
 		
 		// Record a UI Event
 		UiEvent event = {
 			.type = UI_ENCODER,
 			.encMove = {
 				.num = num,
-				.when = state->dirTicks,
+				.when = encoder->dirTicks,
 				.dir = dir,
 			}
 		};
@@ -95,9 +138,13 @@ void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
 // Start the encoder subsystem
 void startEncoders(void) {
 	GLOBAL_STATE.encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
+	GLOBAL_STATE.encoders[0].table = stateTableB;
+	GLOBAL_STATE.encoders[1].table = stateTableB;
+	GLOBAL_STATE.encoders[2].table = stateTableA;
+	GLOBAL_STATE.encoders[3].table = stateTableA;
 	
 	// Set encoders to state zero
 	for (int i = 0; i < NUM_ENCODERS; i++) {
-		GLOBAL_STATE.encoders[i].machine = 0;
+		GLOBAL_STATE.encoders[i].state = 0;
 	}
 }
