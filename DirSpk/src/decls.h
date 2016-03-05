@@ -57,7 +57,7 @@ typedef enum {
 // this EncoderSignals type - in the two LSB.
 typedef uint8_t EncoderSignals;
 
-// Everything about 
+// Everything for a single encoder 
 typedef struct {
 	// The state machine table to use - different encoders require
 	// different tables to run correctly.
@@ -66,10 +66,17 @@ typedef struct {
 	// Current state number
 	uint8_t state;
 	
-	// Last direction and timestamp (for debugging)
-	portTickType dirTicks;
-	EncoderDirection dir;
+	// Debugging info - 0 is most recent, 9 is least recent
+	// Only contains information if signals differ from previously received
+	portTickType lastChange;
+	uint8_t previousStates[10];
+	EncoderSignals previousSignals[10]; 
+	EncoderDirection previousDirections[10];
+	uint32_t timeSince[10];
 } EncoderState;
+
+// For debugging, print the encoder state
+extern void encoderStateSprint(char *buf, size_t buflen, EncoderState *encoder);
 
 // Information about a sensed direction for a particular encoder.
 // This struct will be sent through queues to tasks.

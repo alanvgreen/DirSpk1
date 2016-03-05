@@ -36,7 +36,7 @@ static void initGpio(void) {
 	// PIOC - PC12-PC19 = D51-D44 for encoders
 	// Uses pio_ API since an interrupt handler is needed
 	pio_set_input(PIOC, ENCODER_PINS, PIO_PULLUP);
-	pio_set_debounce_filter(PIOC, ENCODER_PINS, 500); // De-bounce at 500Hz
+	//pio_set_debounce_filter(PIOC, ENCODER_PINS, 500); // De-bounce at 500Hz
 	pio_handler_set(PIOC, ID_PIOC, ENCODER_PINS, 0, encoderPIOCHandler);
 	// Not quite the lowest priority
 	pio_handler_set_priority(PIOC, ID_PIOC, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);

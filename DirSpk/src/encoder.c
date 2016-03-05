@@ -1,18 +1,18 @@
 // encoder.c
-// 
+//
 // Handles rotary encoders on PC12-PC19
 //
 // Runs an interrupt on change in encoder GPIO pin inputs. When the interrupt logic determines
-// that there has been a direction change, items are placed on RTOS queues for interpretation 
+// that there has been a direction change, items are placed on RTOS queues for interpretation
 // by the UI and CLI tasks.
 
 #include "decls.h"
 
 // An encoder is a device that indicates movement clockwise or counter-clockwise. By itself, it
-// has no absolute position. Encoders have two switches each providing a binary output signal, 
+// has no absolute position. Encoders have two switches each providing a binary output signal,
 // making four combinations - 00, 01, 10, and 11.
 //
-// To properly interpret these signals requires knowing not just the current value of the two 
+// To properly interpret these signals requires knowing not just the current value of the two
 // output switches but also the previous values. These values are tracked using a small state
 // machine. I thought about this for a long time and ended up completely agreeing with the principles
 // put forth by Ben Buxton at the link below. I then borrowed implementation concepts from his
@@ -60,7 +60,7 @@ static uint8_t stateTableA[][4] = {
 // Similarly, type B encoders have two sequences that indicate state change:
 // 00->01->11->10->00: ENC_CW
 // 00->10->11->01->00: ENC_CCW
-// 
+//
 // It is allowed to step backwards through intermediates states so that:
 // 00->01->11->01->11->10->11->10->00 also indicates ENC_CW
 //
@@ -95,29 +95,41 @@ static void encoderUpdate(int num, EncoderSignals signals) {
 	// Look up instruction in this encoder's state table
 	uint8_t instruction = encoder->table[encoder->state][signals];
 	encoder->state = instruction >> 4;
-		
+	
 	// Work out what to do next
 	EncoderDirection dir = instruction & 3;
+	
+	// Update debug info if input signals differ from last signals
+	portTickType now = xTaskGetTickCount();
+	if (encoder->previousSignals[0] != signals) {
+		for (int i = 9; i > 0; i--) {
+			encoder->previousStates[i] = encoder->previousStates[i-1];
+			encoder->previousSignals[i] = encoder->previousSignals[i-1];
+			encoder->previousDirections[i] = encoder->previousDirections[i-1];
+			encoder->timeSince[i] = encoder->timeSince[i-1];
+		}
+		encoder->previousStates[0] = encoder->state;
+		encoder->previousSignals[0] = signals;
+		encoder->previousDirections[0] = dir;
+		encoder->timeSince[0] = now - encoder->lastChange;
+		encoder->lastChange = now;
+	}
 	
 	// No direction sensed - get out now
 	if (dir == ENC_NONE) {
 		return;
 	}
 	
-	// Record in encoder record
-	encoder->dirTicks = xTaskGetTickCount();
-	encoder->dir = dir;
-		
 	// Record a UI Event
 	UiEvent event = {
 		.type = UI_ENCODER,
 		.encMove = {
 			.num = num,
-			.when = encoder->dirTicks,
+			.when = now,
 			.dir = dir,
 		}
 	};
-		
+	
 	portBASE_TYPE taskWoken = false;
 	if (GLOBAL_STATE.uiQueue) {
 		if (!xQueueSendToBackFromISR(GLOBAL_STATE.uiQueue, &event, &taskWoken)) {
@@ -125,8 +137,8 @@ static void encoderUpdate(int num, EncoderSignals signals) {
 		}
 	}
 	if (GLOBAL_STATE.encoderDebugQueue) {
-		xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue, 
-			&event.encMove, &taskWoken);
+		xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue,
+		&event.encMove, &taskWoken);
 	}
 	if (taskWoken) {
 		vPortYieldFromISR();
@@ -138,6 +150,7 @@ void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
 	// Get new values of pins from bits 19-12
 	uint32_t curr = PIOC->PIO_PDSR >> 12;
 	
+	//encoderUpdate(0, curr&3);
 	for (int i = 0; i < NUM_ENCODERS; i++) {
 		encoderUpdate(i, curr & 3);
 		curr >>= 2;
@@ -154,4 +167,29 @@ void startEncoders(void) {
 	GLOBAL_STATE.encoders[1].table = stateTableB;
 	GLOBAL_STATE.encoders[2].table = stateTableA;
 	GLOBAL_STATE.encoders[3].table = stateTableA;
+}
+
+
+static char const *SEP = ", ";
+
+// For debugging, print the encoder state
+void encoderStateSprint(char *buf, size_t buflen, EncoderState *encoder) {
+	char *p = buf;
+	int remaining = buflen;
+	for (int i = 0; i < 10; i++) {
+		int r = snprintf(p, remaining, "%s[%1hhx %1hhd %1d %3lu]", 
+		    i > 0 ? SEP : "", 
+			encoder->previousStates[i],
+			encoder->previousSignals[i],
+			encoder->previousDirections[i],
+			encoder->timeSince[i]);
+		if (r <= 0 || r > remaining) {
+			// Some kind of output or truncation
+			return ;
+		}
+		// Point to new write location, decrement remaining buffer size
+		// in unison.
+		p += r;
+		remaining -= r;
+	}
 }

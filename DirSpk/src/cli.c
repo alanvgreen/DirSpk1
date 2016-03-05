@@ -117,13 +117,6 @@ static const char *encoderLabel(EncoderDirection d) {
 	}
 }
 
-static void writeDetailedEncoderState(int n) {
-	EncoderState *s = GLOBAL_STATE.encoders + n;
-	snprintf((char*) txBuf, txBufSize, "%s, %d, %hhx\r\n", 
-	    encoderLabel(s->dir), (int) s->dirTicks, s->state);
-	consoleWriteTxBuf();
-}
-
 // Write the current global state
 static void writeGlobalStateSummary(void) {
 	snprintf((char*) txBuf, txBufSize, "UIQ(%s), Vol(%d, %d)\r\n",
@@ -257,9 +250,16 @@ static portBASE_TYPE encoderTrackCommand(
 	}
 	uint32_t endTicks = xTaskGetTickCount() + (seconds * 1000);
 	
+	EncoderState *encoder = GLOBAL_STATE.encoders + enc;
+	uint32_t seen = 0;
 	while (xTaskGetTickCount() < endTicks) {
-		writeDetailedEncoderState(enc);
-		vTaskDelay(20);
+		if (encoder->lastChange != seen) {
+			encoderStateSprint((char *) txBuf, txBufSize, encoder);
+			consoleWriteTxBuf();
+			consoleWrite(CRLF);
+			seen = encoder->lastChange;
+		}
+		vTaskDelay(1);
 	}
 	return pdFALSE;
 }
