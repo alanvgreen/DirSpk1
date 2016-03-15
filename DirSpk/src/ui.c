@@ -15,7 +15,7 @@ volatile bool uiQueueFullFlag;
 
 // Update gain to pot. Execute while holding the SPI mutex. 
 static void updateGain(void) {
-	uint16_t vol = GLOBAL_STATE.gain0;
+	uint16_t vol = gain0;
 	// Set reg0
 	spiSendReceive((0 << 12) + vol);
 	// Set reg1
@@ -42,10 +42,10 @@ static void uiHandleEncoderEvent(EncoderMove *p) {
 // Fetch volume from pot. Execute while holding the SPI mutex.
 static void getVolume(void) {
 	// Read r0
-	GLOBAL_STATE.gain0 = spiSendReceive(0x0c00) & 0x1ff;
+	gain0 = spiSendReceive(0x0c00) & 0x1ff;
 
 	// Read r1
-	GLOBAL_STATE.gain1 = spiSendReceive(0x1c00) & 0x1ff;	
+	gain1 = spiSendReceive(0x1c00) & 0x1ff;	
 }
 
 

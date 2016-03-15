@@ -3,6 +3,14 @@
 
 #include "decls.h"
 
+
+// TODO: implement Audio Mode / Value
+// The current mode
+AudioMode audioMode;
+
+// The value to output - range from 1 to US_PERIOD - 2, inclusive
+uint16_t audioValue;
+
 // 40kHz sampler.
 //
 // Runs at too high a priority to call FreeRTOS routines.

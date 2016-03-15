@@ -32,11 +32,29 @@
 #define MS_TO_TICKS(t) ((t) / portTICK_RATE_MS)
 
 //
-// PWM Generation
+// PWM Generation / Audio
 //
 
-// Ultrasonic PWM period = 84000000 / 40000 cycles
+// Ultrasonic PWM period in microseconds = 84000000 / 40000 cycles
 #define US_PERIOD 2100
+
+// The various modes that the audio can be in
+typedef enum {
+	// No Audio - turn off PWM
+	AM_OFF,
+	
+	// Via ADC channels
+	AM_ADC,
+	
+	// Given Value to output
+	AM_FREQ	
+} AudioMode;
+
+// The current mode
+extern AudioMode audioMode;
+
+// The value to output - range from 1 to US_PERIOD - 2, inclusive
+extern uint16_t audioValue;
 
 
 //
