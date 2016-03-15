@@ -250,7 +250,7 @@ static portBASE_TYPE encoderTrackCommand(
 	}
 	uint32_t endTicks = xTaskGetTickCount() + (seconds * 1000);
 	
-	EncoderState *encoder = GLOBAL_STATE.encoders + enc;
+	EncoderState *encoder = encoderStates + enc;
 	uint32_t seen = 0;
 	while (xTaskGetTickCount() < endTicks) {
 		if (encoder->lastChange != seen) {
@@ -286,7 +286,7 @@ const int8_t *pcCommandString) {
 		uint32_t endTicks = xTaskGetTickCount() + 1000;
 		while (xTaskGetTickCount() < endTicks) {
 			uint32_t ticks = endTicks - xTaskGetTickCount();
-		    if (xQueueReceive(GLOBAL_STATE.encoderDebugQueue, &move, ticks)) {
+		    if (xQueueReceive(encoderDebugQueue, &move, ticks)) {
 				snprintf((char *) txBuf, txBufSize, "  %d - %s\r\n", 
 				    move.num, encoderLabel(move.dir));
 				consoleWriteTxBuf();
@@ -303,7 +303,7 @@ int8_t *pcWriteBuffer,
 size_t xWriteBufferLen,
 const int8_t *pcCommandString) {
 	// Take the mutex
-	if (!xSemaphoreTake(GLOBAL_STATE.spiMutex, 1000)) {
+	if (!xSemaphoreTake(spiMutex, 1000)) {
 		consoleWrite(MSG_SPI_BUSY);
 		return pdFALSE;
 	}
@@ -345,7 +345,7 @@ const int8_t *pcCommandString) {
 		consoleWriteTxBuf();
 	}
 	
-	if (!xSemaphoreGive(GLOBAL_STATE.spiMutex)) {
+	if (!xSemaphoreGive(spiMutex)) {
 		consoleWrite(MSG_SPI_MUTEX_ERROR);
 		return pdFALSE;
 	}
@@ -376,7 +376,7 @@ const int8_t *pcCommandString) {
 	}
 	
 	// Take the mutex
-	if (!xSemaphoreTake(GLOBAL_STATE.spiMutex, 1000)) {
+	if (!xSemaphoreTake(spiMutex, 1000)) {
 		consoleWrite(MSG_SPI_BUSY);
 		return pdFALSE;
 	}
@@ -389,7 +389,7 @@ const int8_t *pcCommandString) {
 	consoleWriteTxBuf();
 	
 	// Return Mutex
-	if (!xSemaphoreGive(GLOBAL_STATE.spiMutex)) {
+	if (!xSemaphoreGive(spiMutex)) {
 		consoleWrite(MSG_SPI_MUTEX_ERROR);
 		return pdFALSE;
 	}

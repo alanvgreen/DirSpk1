@@ -25,8 +25,10 @@ void PWM_Handler(void) {
 	// Calculate output value for DACC
 	dacc_write_conversion_data(DACC, sum / 2);
 	
-	// Calculate output value for PWM Channel 2.
+	// Calculate duty cycle value for PWM Channel 2.
 	// Calculated value must be between 0 and US_PERIOD-1, non inclusive.
-	int32_t duty = ((US_PERIOD - 2) * sum / 8192) + 1;
+	//int32_t duty = ((US_PERIOD - 2) * sum / 8192) + 1;
+	// TODO: set properly
+	int32_t duty = US_PERIOD / 2;
 	PWM->PWM_CH_NUM[2].PWM_CDTYUPD = duty;
 }

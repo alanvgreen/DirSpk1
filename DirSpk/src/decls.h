@@ -97,6 +97,14 @@ extern void encoderPIOCHandler(uint32_t, uint32_t);
 // Start the encoder subsystem
 extern void startEncoders(void);
 
+// State of the encoders. Owner: Encoder interrupt.
+// Exposed for debug through CLI.
+extern EncoderState encoderStates[NUM_ENCODERS];
+
+// For debugging. Holds EncoderMove objects.
+// All moves go in here, although queue may overflow.
+extern xQueueHandle encoderDebugQueue;
+
 //
 // SPI control
 //
@@ -104,56 +112,18 @@ extern void startEncoders(void);
 // Start the SPI subsystem
 void startSpi(void);
 
-// Executes fn while holding the SPI mutex
-void spiExclusive(void (*fn)(void));
+// Mutex for SPI is being used.
+// Tasks calling spiSendReceive must hold this mutex.
+extern xSemaphoreHandle spiMutex;
 
 // Send a datum, receive a datum.
 // Channel number must be encoded in bits 19-16
 // Acquire semaphore before using
 uint32_t spiSendReceive(uint32_t datum);
 
-//
-// Global shared state
-//
-// TODO: think about where this all really belongs
+// Utility function: executes fn while holding the SPI mutex
+void spiWithMutex(void (*fn)(void));
 
-// The type of the GlobalState structure.
-//
-// Contains all state that is shared between components, particularly if
-// displayable in UI or in CLI.
-//
-// Non-concurrent members are commented with an owner.
-// Only the owner updates the value.
-typedef struct {
-	// UiQueue for events from encoders, touch, etc.
-	xQueueHandle uiQueue;
-	
-	// Gain for channels zero and 1. Owner: UI task.
-	uint16_t gain0, gain1;
-	
-	// Whether UIQueue has ever been full. Set only. Owner: any sender to uiQueue.
-	bool uiQueueFullFlag;
-	
-	// Whether PWM is enabled. Set by calling xxxx
-	// bool pwmEnable;
-	// Whether DAC is enabled. Set by calling xxxx
-	// bool dacEnable;
-	// How Audio signals are generated. Set by calling xxx
-	// AudioInMode audioInMode;
-	
-	// State of the encoders. Owner: Encoder interrupt.
-	EncoderState encoders[NUM_ENCODERS];
-	
-	// Debug queue. All moves go in here, although queue may overflow
-	xQueueHandle encoderDebugQueue;
-	
-	// Mutex for SPI is being used.
-	xSemaphoreHandle spiMutex;
-	
-} GlobalState;
-
-// Global state may be read directly from this variable
-extern GlobalState GLOBAL_STATE;
 
 //
 // Utility funcs
@@ -202,6 +172,15 @@ typedef struct {
 		EncoderMove encMove;
 	};
 } UiEvent;
+
+// UiQueue for events from encoders, touch, etc. Contains UiEvents
+extern xQueueHandle uiQueue;
+	
+// Gain for channels zero and 1. Written by: UI task.
+extern volatile uint16_t gain0, gain1;
+	
+// Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
+extern bool uiQueueFullFlag;
 
 // Start the UI task
 void startUi(void);

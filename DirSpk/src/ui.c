@@ -4,6 +4,15 @@
 
 #include "decls.h"
 
+// UiQueue for events from encoders, touch, etc. Contains 
+xQueueHandle uiQueue;
+
+// Gain for channels zero and 1. Written by: UI task.
+volatile uint16_t gain0, gain1;
+
+// Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
+bool uiQueueFullFlag;
+
 // Update gain to pot. Execute while holding the SPI mutex. 
 static void updateGain(void) {
 	uint16_t vol = GLOBAL_STATE.gain0;
@@ -18,11 +27,11 @@ static void updateGain(void) {
 static void uiHandleEncoderEvent(EncoderMove *p) {
 	// Set both pots to vol0
 	if (p->num == 3) {
-		int16_t vol = GLOBAL_STATE.gain0;
-		vol += (p->dir == ENC_CW) ? 4 : -4;
-		vol = max(min(vol, 0x100), 0);
-		GLOBAL_STATE.gain0 = GLOBAL_STATE.gain1 = vol;
-		spiExclusive(updateGain);
+		int16_t val = gain0;
+		val += (p->dir == ENC_CW) ? 4 : -4;
+		val = max(min(val, 0x100), 0);
+		gain0 = gain1 = val;
+		spiWithMutex(updateGain);
 	}
 	
 	// TODO: master + fade
@@ -30,7 +39,7 @@ static void uiHandleEncoderEvent(EncoderMove *p) {
 	// TODO: update NV pot after changes stop for a while
 }
 
-// Get volume from pot. Execute while holding the SPI mutex.
+// Fetch volume from pot. Execute while holding the SPI mutex.
 static void getVolume(void) {
 	// Read r0
 	GLOBAL_STATE.gain0 = spiSendReceive(0x0c00) & 0x1ff;
@@ -38,16 +47,18 @@ static void getVolume(void) {
 	// Read r1
 	GLOBAL_STATE.gain1 = spiSendReceive(0x1c00) & 0x1ff;	
 }
+
+
 // The console task.
 static void uiTask(void *pvParameters) {
 	
 	// Initialize the UI global state
-	spiExclusive(getVolume);
+	spiWithMutex(getVolume);
 	
 	// Get an event, deal with it
 	while (1) {
 		UiEvent event;
-		if (!xQueueReceive(GLOBAL_STATE.uiQueue, &event, 1001)) {
+		if (!xQueueReceive(uiQueue, &event, 1001)) {
 			continue;
 		}
 		if (event.type == UI_ENCODER) {
@@ -63,7 +74,7 @@ static void uiTask(void *pvParameters) {
 void startUi(void) {
 	// 10 deep is a little wasteful of UI, and might to lead to sloppy, unresponsive UI.
 	// Let's see.
-	GLOBAL_STATE.uiQueue = xQueueCreate(10, sizeof(UiEvent));
+	uiQueue = xQueueCreate(10, sizeof(UiEvent));
 	
 	portBASE_TYPE t = xTaskCreate(
 		uiTask,

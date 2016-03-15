@@ -8,6 +8,14 @@
 
 #include "decls.h"
 
+// State of the encoders. Owner: Encoder interrupt.
+// Exposed for debug through CLI.
+EncoderState encoderStates[NUM_ENCODERS];
+
+// For debugging. Holds EncoderMove objects.
+// All moves go in here, although queue may overflow.
+xQueueHandle encoderDebugQueue;
+
 // An encoder is a device that indicates movement clockwise or counter-clockwise. By itself, it
 // has no absolute position. Encoders have two switches each providing a binary output signal,
 // making four combinations - 00, 01, 10, and 11.
@@ -90,7 +98,7 @@ static uint8_t stateTableB[][4] = {
 // Update a single encoder
 // Executes from within an interrupt
 static void encoderUpdate(int num, EncoderSignals signals) {
-	EncoderState *encoder = GLOBAL_STATE.encoders + num;
+	EncoderState *encoder = encoderStates + num;
 	
 	// Look up instruction in this encoder's state table
 	uint8_t instruction = encoder->table[encoder->state][signals];
@@ -136,9 +144,8 @@ static void encoderUpdate(int num, EncoderSignals signals) {
 			GLOBAL_STATE.uiQueueFullFlag = true;
 		}
 	}
-	if (GLOBAL_STATE.encoderDebugQueue) {
-		xQueueSendToBackFromISR(GLOBAL_STATE.encoderDebugQueue,
-		&event.encMove, &taskWoken);
+	if (encoderDebugQueue) {
+		xQueueSendToBackFromISR(encoderDebugQueue, &event.encMove, &taskWoken);
 	}
 	if (taskWoken) {
 		vPortYieldFromISR();
@@ -160,13 +167,13 @@ void encoderPIOCHandler(uint32_t unused_id, uint32_t unused_mask) {
 // Start the encoder subsystem
 void startEncoders(void) {
 	// Create the debug queue
-	GLOBAL_STATE.encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
+	encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
 	
 	// Set up the state table for each encoder
-	GLOBAL_STATE.encoders[0].table = stateTableB;
-	GLOBAL_STATE.encoders[1].table = stateTableB;
-	GLOBAL_STATE.encoders[2].table = stateTableA;
-	GLOBAL_STATE.encoders[3].table = stateTableA;
+	encoderStates[0].table = stateTableB;
+	encoderStates[1].table = stateTableB;
+	encoderStates[2].table = stateTableA;
+	encoderStates[3].table = stateTableA;
 }
 
 
