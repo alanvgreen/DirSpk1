@@ -177,10 +177,11 @@ typedef struct {
 extern xQueueHandle uiQueue;
 	
 // Gain for channels zero and 1. Written by: UI task.
+// This is a convenient reflection of the last set values.
 extern volatile uint16_t gain0, gain1;
 	
 // Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
-extern bool uiQueueFullFlag;
+extern volatile bool uiQueueFullFlag;
 
 // Start the UI task
 void startUi(void);

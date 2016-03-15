@@ -139,9 +139,9 @@ static void encoderUpdate(int num, EncoderSignals signals) {
 	};
 	
 	portBASE_TYPE taskWoken = false;
-	if (GLOBAL_STATE.uiQueue) {
-		if (!xQueueSendToBackFromISR(GLOBAL_STATE.uiQueue, &event, &taskWoken)) {
-			GLOBAL_STATE.uiQueueFullFlag = true;
+	if (uiQueue) {
+		if (!xQueueSendToBackFromISR(uiQueue, &event, &taskWoken)) {
+			uiQueueFullFlag = true;
 		}
 	}
 	if (encoderDebugQueue) {

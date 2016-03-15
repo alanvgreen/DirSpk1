@@ -120,9 +120,8 @@ static const char *encoderLabel(EncoderDirection d) {
 // Write the current global state
 static void writeGlobalStateSummary(void) {
 	snprintf((char*) txBuf, txBufSize, "UIQ(%s), Vol(%d, %d)\r\n",
-		GLOBAL_STATE.uiQueueFullFlag ? MSG_ERROR : MSG_OK,
-		GLOBAL_STATE.gain0,
-		GLOBAL_STATE.gain1);
+		uiQueueFullFlag ? MSG_ERROR : MSG_OK,
+		gain0, gain1);
 	consoleWriteTxBuf();
 }
 

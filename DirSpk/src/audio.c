@@ -27,8 +27,9 @@ void PWM_Handler(void) {
 	
 	// Calculate duty cycle value for PWM Channel 2.
 	// Calculated value must be between 0 and US_PERIOD-1, non inclusive.
-	//int32_t duty = ((US_PERIOD - 2) * sum / 8192) + 1;
-	// TODO: set properly
-	int32_t duty = US_PERIOD / 2;
+	
+	int32_t duty = ((US_PERIOD - 2) * sum / 8192) + 1;
+	// For testing with silence
+	// int32_t duty = US_PERIOD / 2;
 	PWM->PWM_CH_NUM[2].PWM_CDTYUPD = duty;
 }

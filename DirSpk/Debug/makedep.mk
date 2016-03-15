@@ -76,8 +76,6 @@ src\init.c
 
 src\spi.c
 
-src\state.c
-
 src\ui.c
 
 src\util.c

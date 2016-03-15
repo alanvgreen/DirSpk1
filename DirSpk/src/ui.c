@@ -11,7 +11,7 @@ xQueueHandle uiQueue;
 volatile uint16_t gain0, gain1;
 
 // Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
-bool uiQueueFullFlag;
+volatile bool uiQueueFullFlag;
 
 // Update gain to pot. Execute while holding the SPI mutex. 
 static void updateGain(void) {

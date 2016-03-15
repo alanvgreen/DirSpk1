@@ -140,7 +140,6 @@ C_SRCS +=  \
 ../src/encoder.c \
 ../src/init.c \
 ../src/spi.c \
-../src/state.c \
 ../src/ui.c \
 ../src/util.c
 
@@ -189,7 +188,6 @@ src/dirspk_main.o \
 src/encoder.o \
 src/init.o \
 src/spi.o \
-src/state.o \
 src/ui.o \
 src/util.o
 
@@ -231,7 +229,6 @@ src/dirspk_main.o \
 src/encoder.o \
 src/init.o \
 src/spi.o \
-src/state.o \
 src/ui.o \
 src/util.o
 
@@ -273,7 +270,6 @@ src/dirspk_main.d \
 src/encoder.d \
 src/init.d \
 src/spi.d \
-src/state.d \
 src/ui.d \
 src/util.d
 
@@ -315,7 +311,6 @@ src/dirspk_main.d \
 src/encoder.d \
 src/init.d \
 src/spi.d \
-src/state.d \
 src/ui.d \
 src/util.d
 
@@ -334,8 +329,6 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
-
-
 
 
 
