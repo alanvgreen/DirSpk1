@@ -13,9 +13,9 @@ static void initGpio(void) {
 	// PA2 = A7 = ADC channel 0
 	ioport_set_pin_dir(PIO_PA2_IDX, IOPORT_DIR_INPUT);
 	
-	// PA25,26,27,28 = MISO, MOSI, SCK, SPIOCS0 = D74, D75, D76, D77
-	// On the Due D77 and D10 share a pin
-	const int spiPins = 0xf << 25;
+	// PA25,26,27,28,29 = MISO, MOSI, SCK, SPI0_CS0, SPI0_CS1 = D74, D75, D76, D77, D87
+	// On the Due D77 and D10 share a pin, as Do D87 and D4
+	const int spiPins = 0x1f << 25;
 	ioport_set_port_mode(IOPORT_PIOA, spiPins, IOPORT_MODE_MUX_A);
 	ioport_disable_port(IOPORT_PIOA, spiPins);
 	
@@ -188,18 +188,29 @@ static void initSpi0(void) {
 	
 	// Master, variable select, no decode chip select, fault detection,
 	// no wait read before transfer.
-	// DELAY = 100;
-	SPI0->SPI_MR = (100 << 24) + 0x23; 
+	// DLYBCS = 25 MCK cycles. FOR RA8825, must be > 5 RA8825 clock cycles, which
+	// could be as slow as 20MHz
+	SPI0->SPI_MR = (25 << 24) + 0x23; 
 	
-	// SPI Chip 0
+	// SPI Chip 0 (NCP4261)
 	// No delay between consecutive transfers. 
 	// (Though keep in mind MCP4261 requires ~10ms delay after writing NVRAM)
-	// 16 bit transfers
-	// clock polarity, phase = 
+	// 16 bit transfers.
+	// TODO: set to 10MHz
 	uint32_t f = 1 * 1000 * 1000; // 1MHz
-	int32_t clk = div_ceil(sysclk_get_cpu_hz(), f); // 1MHz (approx)
+	int32_t clk = div_ceil(sysclk_get_cpu_hz(), f);
 	int32_t dlybct = div_ceil(sysclk_get_cpu_hz(), f * 32); // wait for a clock cycle before release cs
+	// DLYBCT = dlybct * 32, DLYBS = 0, SCBR = clk, 16 bit transfers,  NCPHA = 1, CPOL = 0
 	SPI0->SPI_CSR[0] = (dlybct << 24) + (clk << 8) + (8 << 4) + 2;
+	
+	// SPI Chip 1 (RA8875)
+	// TODO: set to 20MHz for write and 10MHz for read. 
+	// See RA8875 datasheet section 6-1-2-2 for timing info. Will need to set
+	// RA8875 clock to 60MHz first
+	f = 1 * 1000 * 1000; // 1MHz
+	div_ceil(sysclk_get_cpu_hz(), f); // 1MHz (approx)
+	// NCPHA = 1, CPOL = 1
+	SPI0->SPI_CSR[1] = + (8 << 4) + 1;
 }
 
 void init(void) {
