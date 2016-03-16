@@ -21,6 +21,12 @@ static char const *MSG_OK = "OK";
 static char const *MSG_ERROR = "*** ERROR ***";
 static char const *MSG_Y = "Y";
 static char const *MSG_N = "N";
+static char const *MSG_NO_WORDS = "Must provide at least 1 hex word to send.";
+static char const *MSG_TOO_MANY_WORDS = "Maximum 16 words";
+static char const *MSG_RESPONSE = "Response: ";
+static char const *MSG_SCREEN_REG_INVALID = "Register must be in range 00..ff";
+static char const *MSG_SCREEN_DATA_INVALID = "Data must be in range 00..ff";
+
 
 static char const POT_REG_NAMES[6][7] = {
 	"R0    ",
@@ -144,24 +150,6 @@ static void cliTask(void *pvParameters) {
 	}
 }
 
-// Command to show stats about each task
-static portBASE_TYPE tasksCommand(
-    int8_t *pcWriteBuffer,
-    size_t xWriteBufferLen,
-    const int8_t *pcCommandString) {
-	
-	// First time through, show the header	
-	static bool shownHeader = false;
-	if (!shownHeader) {
-		strcpy((char *) pcWriteBuffer, TASKS_HEADER);
-		shownHeader = true;
-		return pdTRUE;
-	}
-	vTaskList(pcWriteBuffer);
-	shownHeader = false;
-	return pdFALSE;
-}
-
 // Iterates forward through p to find the start of the next parameter
 static int8_t const *findNextParam(int8_t const *p) {
 	while (*p && *p != ' ') p++;
@@ -170,7 +158,7 @@ static int8_t const *findNextParam(int8_t const *p) {
 }
 
 // Parse a positive integer from p. Return -1 on failure;
-static int parseInt(int8_t const *p, int base) {
+static int32_t parseInt(int8_t const *p, int base) {
 	int8_t *end;
 	long val = strtol((char const *) p, (char **) &end, base);
 
@@ -354,9 +342,9 @@ const int8_t *pcCommandString) {
 
 // put a value into the pot memory
 static portBASE_TYPE potSetCommand(
-int8_t *pcWriteBuffer,
-size_t xWriteBufferLen,
-const int8_t *pcCommandString) {
+	int8_t *pcWriteBuffer,
+	size_t xWriteBufferLen,
+	const int8_t *pcCommandString) {
 	
 	// scan through command, then through whitespace to address
 	int8_t const *p = findNextParam(pcCommandString);
@@ -396,6 +384,162 @@ const int8_t *pcCommandString) {
 	return pdFALSE;
 }
 
+
+// Command to show stats about each task
+static portBASE_TYPE tasksCommand(
+	int8_t *pcWriteBuffer,
+	size_t xWriteBufferLen,
+	const int8_t *pcCommandString) {
+	
+	// First time through, show the header
+	static bool shownHeader = false;
+	if (!shownHeader) {
+		strcpy((char *) pcWriteBuffer, TASKS_HEADER);
+		shownHeader = true;
+		return pdTRUE;
+	}
+	vTaskList(pcWriteBuffer);
+	shownHeader = false;
+	return pdFALSE;
+}
+
+// Send 16 bit values to screen
+static portBASE_TYPE basicScreenCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+		
+	// Find all the data to send
+	int8_t const *p = findNextParam(pcCommandString);
+	if (!*p) {
+		consoleWrite(MSG_NO_WORDS);
+		return pdFALSE;
+	}
+	uint16_t words[16];
+	size_t wCount = 0;
+	while (*p && wCount < 16) {
+		int32_t datum = parseInt(p, 16);
+		if (datum < 0) {
+			snprintf((char *) txBuf, txBufSize, "Not valid hex: %s", p);
+			consoleWriteTxBuf();
+			return pdFALSE;
+		}
+		words[wCount++] = (uint16_t) datum;
+		p = findNextParam(p);
+	}
+	if (*p) {
+		consoleWrite(MSG_TOO_MANY_WORDS);
+		return pdFALSE;
+	}
+	
+	// Take the mutex
+	if (!xSemaphoreTake(spiMutex, 1000)) {
+		consoleWrite(MSG_SPI_BUSY);
+		return pdFALSE;
+	}
+	for (size_t i = 0; i < wCount; i++) {
+		// Set LastXfer (bit 24) and SPI channel (bits 19-16) as well as word
+		words[i] = spiSendReceive(SCREEN_TO_TDR(words[i]));
+	}
+	// Return Mutex
+	if (!xSemaphoreGive(spiMutex)) {
+		consoleWrite(MSG_SPI_MUTEX_ERROR);
+		return pdFALSE;
+	}
+	
+	consoleWrite(MSG_RESPONSE);
+	for (size_t i = 0; i < wCount; i++) {
+		snprintf((char *) txBuf, txBufSize, "%04x ", words[i]);
+		consoleWriteTxBuf();
+	}
+	consoleWrite(CRLF);
+	
+	return pdFALSE;
+}
+
+// Write screen register
+static portBASE_TYPE screenWriteCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+	
+	// scan through command, then through whitespace to address
+	int8_t const *p = findNextParam(pcCommandString);
+	int reg = parseInt(p, 16);
+	if (reg < 0 || reg > 255) {
+		consoleWrite(MSG_SCREEN_REG_INVALID);
+		return pdFALSE;
+	}
+	
+	// scan through address then whitespace to value
+	p = findNextParam(p);
+	int val = parseInt(p, 16);
+	if (val < 0 || val > 255) {
+		consoleWrite(MSG_SCREEN_DATA_INVALID);
+		return pdFALSE;
+	}
+	
+	// Take the mutex
+	if (!xSemaphoreTake(spiMutex, 1000)) {
+		consoleWrite(MSG_SPI_BUSY);
+		return pdFALSE;
+	}
+	
+	// Send register number and write value
+	spiSendReceive(SCREEN_TO_TDR(0x8000 + reg));
+	spiSendReceive(SCREEN_TO_TDR(0x0000 + val));
+	
+	// Now read back register (not all values may be read)
+	spiSendReceive(SCREEN_TO_TDR(0x8000 + reg));
+	uint16_t result = spiSendReceive(SCREEN_TO_TDR(0x4000));
+	snprintf((char *) txBuf, txBufSize, "r%02x = %02x\r\n", reg, 0xff & result);
+	consoleWriteTxBuf();
+	
+	// Return Mutex
+	if (!xSemaphoreGive(spiMutex)) {
+		consoleWrite(MSG_SPI_MUTEX_ERROR);
+		return pdFALSE;
+	}
+	
+	return pdFALSE;
+}
+
+// Read screen register
+static portBASE_TYPE screenReadCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+	
+	// scan through command, then through whitespace to address
+	int8_t const *p = findNextParam(pcCommandString);
+	int reg = parseInt(p, 16);
+	if (reg < 0 || reg > 255) {
+		consoleWrite(MSG_SCREEN_REG_INVALID);
+		return pdFALSE;
+	}
+		
+	// Take the mutex
+	if (!xSemaphoreTake(spiMutex, 1000)) {
+		consoleWrite(MSG_SPI_BUSY);
+		return pdFALSE;
+	}
+		
+	//Read back register (not all values may be read)
+	spiSendReceive(SCREEN_TO_TDR(0x8000 + reg));
+	uint16_t result = spiSendReceive(SCREEN_TO_TDR(0x4000));
+	snprintf((char *) txBuf, txBufSize, "r%02x = %02x\r\n", reg, 0xff & result);
+	consoleWriteTxBuf();
+	
+	// Return Mutex
+	if (!xSemaphoreGive(spiMutex)) {
+		consoleWrite(MSG_SPI_MUTEX_ERROR);
+		return pdFALSE;
+	}
+	
+	return pdFALSE;
+}
+	
+
 // All the commands to register
 static CLI_Command_Definition_t allCommands[] = {
 	{
@@ -427,6 +571,24 @@ static CLI_Command_Definition_t allCommands[] = {
 		USTR("potset r v: Sets pot register r (hex) to value v (hex).\r\n"),
 		potSetCommand,
 		2
+	},	
+	{
+		USTR("bs"),
+		USTR("bs xxxx [xxxx]: Basic screen send of 16bits of data.\r\n"),
+		basicScreenCommand,
+		-1
+	},
+	{
+		USTR("sw"),
+		USTR("sw rr nn: Screen write reg rr := nn.\r\n"),
+		screenWriteCommand,
+		2
+	},
+	{
+		USTR("sr"),
+		USTR("sr rr: Screen read register rr.\r\n"),
+		screenReadCommand,
+		1
 	},
 	{
 		USTR("tasks"),

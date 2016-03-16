@@ -33,10 +33,10 @@ void spiWithMutex(void (*fn)(void)) {
 // Channel number must be encoded in bits 19-16
 // Acquire semaphore before using
 // TODO: Work out DMA for longer send chains
-uint32_t spiSendReceive(uint32_t datum) {
+uint16_t spiSendReceive(uint32_t datum) {
 	portTickType timeout = xTaskGetTickCount() + MS_TO_TICKS(SPI_TIMEOUT_MS);
 	// Empty receive data register
-	SPI0->SPI_RDR;
+	//SPI0->SPI_RDR;
 	
 	// Transmit datum
 	SPI0->SPI_TDR = datum;

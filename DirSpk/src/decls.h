@@ -135,9 +135,10 @@ void startSpi(void);
 extern xSemaphoreHandle spiMutex;
 
 // Send a datum, receive a datum.
+// datum is 32-big value to place in TCR.
 // Channel number must be encoded in bits 19-16
 // Acquire semaphore before using
-uint32_t spiSendReceive(uint32_t datum);
+uint16_t spiSendReceive(uint32_t datum);
 
 // Utility function: executes fn while holding the SPI mutex
 void spiWithMutex(void (*fn)(void));
@@ -173,6 +174,13 @@ extern freertos_uart_if freeRTOSUART;
 
 // Start the command line interface.
 extern void startCli(void);
+
+//
+// Screen
+//
+
+// Set CS1 low (bits 19:16) and LASTXFER to 1 (bit 24) with data in low 16 bits
+#define SCREEN_TO_TDR(w) ((1 << 24) + (0b1101 << 16) + (0xffff & (w)))
 
 //
 // UI - knobs, screen, buttons, etc

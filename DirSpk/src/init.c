@@ -208,9 +208,9 @@ static void initSpi0(void) {
 	// See RA8875 datasheet section 6-1-2-2 for timing info. Will need to set
 	// RA8875 clock to 60MHz first
 	f = 1 * 1000 * 1000; // 1MHz
-	div_ceil(sysclk_get_cpu_hz(), f); // 1MHz (approx)
+	clk = div_ceil(sysclk_get_cpu_hz(), f); // 1MHz (approx)
 	// NCPHA = 1, CPOL = 1
-	SPI0->SPI_CSR[1] = + (8 << 4) + 1;
+	SPI0->SPI_CSR[1] = (clk << 8) + (8 << 4) + 1;
 }
 
 void init(void) {
