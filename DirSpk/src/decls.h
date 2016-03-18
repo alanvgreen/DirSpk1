@@ -182,6 +182,24 @@ extern void startCli(void);
 // Set CS1 low (bits 19:16) and LASTXFER to 1 (bit 24) with data in low 16 bits
 #define SCREEN_TO_TDR(w) ((1 << 24) + (0b1101 << 16) + (0xffff & (w)))
 
+// Commands to send to the screen
+typedef enum {
+	// Empty command - error
+	SCREEN_NONE = 0,
+	// Initialize the screen
+	SCREEN_INIT,
+} ScreenCommandType;
+typedef struct {
+	ScreenCommandType type;
+} ScreenCommand;
+
+// Queue for screen commands
+extern xQueueHandle screenQueue;
+
+// Start the screen
+void startScreen(void);
+
+
 //
 // UI - knobs, screen, buttons, etc
 //

@@ -24,9 +24,10 @@ static char const *MSG_N = "N";
 static char const *MSG_NO_WORDS = "Must provide at least 1 hex word to send.";
 static char const *MSG_TOO_MANY_WORDS = "Maximum 16 words";
 static char const *MSG_RESPONSE = "Response: ";
-static char const *MSG_SCREEN_REG_INVALID = "Register must be in range 00..ff";
-static char const *MSG_SCREEN_DATA_INVALID = "Data must be in range 00..ff";
-
+static char const *MSG_SCREEN_REG_INVALID = "Register must be in range 00..ff\r\n";
+static char const *MSG_SCREEN_DATA_INVALID = "Data must be in range 00..ff\r\n";
+static char const *MSG_SCREEN_CMD_INVALID = "Screen command number not valid\r\n";
+static char const *MSG_SCREEN_QUEUE_FAILED = "Failed to post to screen queue\r\n";
 
 static char const POT_REG_NAMES[6][7] = {
 	"R0    ",
@@ -538,43 +539,69 @@ const int8_t *pcCommandString) {
 	
 	return pdFALSE;
 }
+
+
+
+// Send a command to the screen task
+static portBASE_TYPE screenTaskCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+	// scan through command, then through whitespace to command type
+	int8_t const *p = findNextParam(pcCommandString);
+	int32_t type = parseInt(p, 0);
+	if (type < 0 || type > 255) {
+		consoleWrite(MSG_SCREEN_CMD_INVALID);
+		return pdFALSE;
+	}
+	
+	// Build the command to send
+	ScreenCommand cmd = {
+		.type = type,
+	};
+	if (!xQueueSendToBack(screenQueue, &cmd, 500)) {
+		consoleWrite(MSG_SCREEN_QUEUE_FAILED);
+		return pdFALSE;
+	}
+	return pdFALSE;
+}
 	
 
 // All the commands to register
 static CLI_Command_Definition_t allCommands[] = {
 	{
-		USTR("adcdump"), 
-		USTR("adcdump c n: Dump n samples from ADC channel c.\r\n"),
+		USTR("ad"), 
+		USTR("ad c n: Dump n samples from ADC channel c.\r\n"),
 		adcDumpCommand,
 		2
 	},
 	{
-		USTR("enctrack"),
-		USTR("enctrack n s: Track encoder n for s seconds.\r\n"),
+		USTR("et"),
+		USTR("et n s: Track encoder n for s seconds.\r\n"),
 		encoderTrackCommand,
 		2
 	},
 	{
-		USTR("enc"),
-		USTR("enc s: Listen to debug encoders for s seconds.\r\n"),
+		USTR("el"),
+		USTR("el s: Listen to debug encoders for s seconds.\r\n"),
 		encoderListenCommand,
 		1
 	},
 	{
-		USTR("pot"),
-		USTR("pot: Lists value of all pot registers.\r\n"),
+		USTR("pl"),
+		USTR("pl: Lists value of all pot registers.\r\n"),
 		potDumpCommand,
 		0
 	},
 	{
-		USTR("potset"),
-		USTR("potset r v: Sets pot register r (hex) to value v (hex).\r\n"),
+		USTR("ps"),
+		USTR("ps r v: Sets pot register r (hex) to value v (hex).\r\n"),
 		potSetCommand,
 		2
 	},	
 	{
-		USTR("bs"),
-		USTR("bs xxxx [xxxx]: Basic screen send of 16bits of data.\r\n"),
+		USTR("ss"),
+		USTR("ss xxxx [xxxx]: Basic screen send of 16bits of data.\r\n"),
 		basicScreenCommand,
 		-1
 	},
@@ -588,6 +615,12 @@ static CLI_Command_Definition_t allCommands[] = {
 		USTR("sr"),
 		USTR("sr rr: Screen read register rr.\r\n"),
 		screenReadCommand,
+		1
+	},
+	{
+		USTR("sc"),
+		USTR("sc n [x, y...]: Send command n to screen task.\r\n"),
+		screenTaskCommand,
 		1
 	},
 	{

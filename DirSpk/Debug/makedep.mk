@@ -74,6 +74,8 @@ src\encoder.c
 
 src\init.c
 
+src\screen.c
+
 src\spi.c
 
 src\ui.c

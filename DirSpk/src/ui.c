@@ -49,7 +49,7 @@ static void getVolume(void) {
 }
 
 
-// The console task.
+// The ui coordinator task.
 static void uiTask(void *pvParameters) {
 	
 	// Initialize the UI global state

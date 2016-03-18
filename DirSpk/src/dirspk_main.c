@@ -15,10 +15,11 @@ int main(void) {
 	init();
 	
 	// Start each task/subsystem
-	startCli();
 	startEncoders();
 	startSpi();
-    startUi();
+	startScreen();
+	startUi();
+	startCli();
 	
 	// Start Task scheduler
 	vTaskStartScheduler();
