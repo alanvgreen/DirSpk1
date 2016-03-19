@@ -83,6 +83,12 @@ static void lcdWriteString(char const *s) {
 	lcdWriteMem((uint8_t const *)s, strlen(s));
 }
 
+// Read a register
+static uint8_t lcdReadReg(uint8_t r) {
+	spiSendReceive(SCREEN_TO_TDR(0x8000 + r)); // command write
+	return 0xff & spiSendReceive(SCREEN_TO_TDR(0x4000)); // data read
+}
+
 // Set register r = v
 static void lcdSetReg(uint8_t r, uint8_t v) {
 	spiSendReceive(SCREEN_TO_TDR(0x8000 + r)); // command write
@@ -178,6 +184,39 @@ static void lcdSetArialFont(void) {
 // Set Bold, fixed width font
 static void lcdSetBoldFont(void) {
 	lcdSetReg(0x2f, 0x13); // ROM type 0, Ascii, bold fixed witdth
+}
+
+// Where LCD is being touched
+typedef struct {
+	bool isTouching;
+	bool isReleased;
+	uint16_t x;
+	uint16_t y;
+} LcdTouchCoords;
+
+// Awkward global state - records whether last result was a touch
+static bool lastWasTouching;
+
+// Read current touch and update lastTouched state too
+static LcdTouchCoords lcdGetTouch(void) {
+	LcdTouchCoords result = { .isTouching = false, .x = 0, .y = 0 };
+		
+	// Check interrupt register
+	if (lcdReadReg(0xf1) & 0x4) {
+		result.isTouching = true;
+		lcdSetReg(0xf1, 4); // Clear interrupt
+		
+		uint8_t lowBits = lcdReadReg(0x74);
+		result.x = (((int16_t) lcdReadReg(0x72)) << 2) + ((lowBits & 0xc) >> 2);
+		result.y = (((int16_t) lcdReadReg(0x73)) << 2) + (lowBits & 3);
+	} else {
+		// not being touched
+		if (lastWasTouching) {
+			result.isReleased = true;
+		}
+	}
+	lastWasTouching = result.isTouching;
+	return result;
 }
 
 //
@@ -324,6 +363,11 @@ static void screenInitLcd(void) {
 	
 	// Just clearing the cobwebs - seems to help avoid missing text
 	lcdWriteString("    "); 
+	
+	// Set up touch
+	lcdSetReg(0xf0, 0x4); // Interrupt for touch
+	lcdSetReg(0x71, 0x4); // Ask for auto mode, debounce
+	lcdSetReg(0x70, 0xd5); // Enable, 16384 clocks for Sample time adjust, adc clock =  system clock div 32 
 }
 
 // Show startup page
