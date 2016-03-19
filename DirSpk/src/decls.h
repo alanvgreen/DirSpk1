@@ -219,7 +219,8 @@ void startScreen(void);
 
 // Type of queue item
 typedef enum {
-	UI_ENCODER
+	UI_ENCODER,  // Event with encoder movement
+	UI_TICK, // Tick to update screen, tune, etc
 } UiType;
 
 // The Queue item

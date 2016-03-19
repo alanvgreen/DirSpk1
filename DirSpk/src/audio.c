@@ -19,7 +19,7 @@ void PWM_Handler(void) {
 	// Read status to indicate that interrupt has been handled
 	uint32_t isr = PWM->PWM_ISR1;
 	if (isr != (1 << 2)) { // Must be interrupt two
-		fatalBlink(1, 6); 
+		fatalBlink(1, 6);
 	}
 	
 	// Temporary code - read ADC, calculate result.

@@ -46,6 +46,7 @@ static xQueueHandle screenQueue;
 #define SCREEN_QUEUE_WAIT_MS 1000
 void screenSendCommand(ScreenCommand *command) {
 	if (!xQueueSendToBack(screenQueue, command, SCREEN_QUEUE_WAIT_MS)) {
+		// TODO(avg): reenable this
 		fatalBlink(4, 5);
 	}
 }
@@ -197,6 +198,15 @@ typedef struct {
 // Awkward global state - records whether last result was a touch
 static bool lastWasTouching;
 
+// Touch pad calibration. These may not be constant between displays
+#define XMIN 0x5f
+#define XMAX 0x3cc
+#define XRANGE (XMAX - XMIN)
+
+#define YMIN 0x97
+#define YMAX 0x3ac
+#define YRANGE (YMAX - YMIN)
+
 // Read current touch and update lastTouched state too
 static LcdTouchCoords lcdGetTouch(void) {
 	LcdTouchCoords result = { .isTouching = false, .x = 0, .y = 0 };
@@ -204,11 +214,14 @@ static LcdTouchCoords lcdGetTouch(void) {
 	// Check interrupt register
 	if (lcdReadReg(0xf1) & 0x4) {
 		result.isTouching = true;
-		lcdSetReg(0xf1, 4); // Clear interrupt
-		
 		uint8_t lowBits = lcdReadReg(0x74);
-		result.x = (((int16_t) lcdReadReg(0x72)) << 2) + ((lowBits & 0xc) >> 2);
-		result.y = (((int16_t) lcdReadReg(0x73)) << 2) + (lowBits & 3);
+		uint32_t xt = (lcdReadReg(0x72) << 2) + ((lowBits & 0xc) >> 2);
+		xt = min(max(xt, XMIN), XMAX);
+		result.x = (xt - XMIN) * 800 / XRANGE;
+		uint32_t yt = (lcdReadReg(0x73) << 2) + (lowBits >> 2);
+		yt = min(max(yt, YMIN), YMAX);
+		result.y = (yt - YMIN) * 480 / YRANGE;
+		lcdSetReg(0xf1, 4); // Clear interrupt
 	} else {
 		// not being touched
 		if (lastWasTouching) {
@@ -244,6 +257,10 @@ typedef struct ScreenElement {
 	// Callback when element is released
 	void (*released)(struct ScreenElement *);
 	
+	// Optional data to help smooth out re-draw
+	uint16_t lastValue;
+	bool lastIsTouched;
+	
 	// Optional pointer to additional data
 	void *pData;
 } ScreenElement;
@@ -258,7 +275,28 @@ static void screenElementsInit(ScreenElement **p) {
 	}
 }
 
-// Initialize all elements in a list
+static bool screenElementContains(ScreenElement *p, LcdTouchCoords tc) {
+	return tc.x >= p->x0 && tc.x < p->x1 && tc.y >= p->y0 && tc.y < p->y1;
+}
+
+// Update touch for all elements in a list. Also call callback if necessary
+static void screenElementsTouch(ScreenElement **p, LcdTouchCoords tc) {
+	while (*p) {
+		if (tc.isTouching) {
+			(*p)->isTouched = screenElementContains(*p, tc);
+		} else {
+			if (tc.isReleased && (*p)->isTouched) {
+				if ((*p)->released) {
+					(*p)->released(*p);
+				}
+			}
+			(*p)->isTouched = false;
+		}
+		p++;
+	}
+}
+
+// Update all elements in a list
 static void screenElementsUpdate(ScreenElement **p) {
 	while (*p) {
 		if ((*p)->update) {
@@ -287,14 +325,25 @@ static void screenWriteOnPoint(uint16_t x, uint16_t y, char *p) {
 
 // Standard update - write value in center-ish of area
 static void screenElementDefaultUpdate(ScreenElement *p) {
-	lcdSetActiveWindow(p->x0, p->y0, p->x1, p->y1);
+	// Get out quickly if can
+	if (p->isTouched == p->lastIsTouched && p->value == p->lastValue) {
+		return;
+	}
 	
-	// Right in the middle
+	// Redraw whole control	
+	lcdSetActiveWindow(p->x0, p->y0, p->x1, p->y1);
+	lcdRoundedRect(p->x0 + 2, p->y0 + 2, p->x1 - 2, p->y1 - 2, 
+	    10, 5, COL_silver, p->isTouched ? COL_silver : COL_black);
+	
+	// Put value right in the middle
 	lcdSetForegroundColor(COL_lime);
 	snprintf(buf, BUF_LEN, "%u", p->value);
 	uint16_t w = p->x1 - p->x0;
 	uint16_t h = p->y1 - p->y0;
 	screenWriteOnPoint(p->x0 + w / 2, p->y0 + h / 2, buf);
+	
+	p->lastIsTouched = p->isTouched;
+	p->lastValue = p->value;
 }
 
 
@@ -460,11 +509,16 @@ static void screenShowInput(ScreenCommand cmd) {
 		lcdClearAll(COL_black);
 		screenElementsInit(inputElements);
 	}
+	
 	// Update values from cmd
 	inputLeftVu.value = cmd.leftLevel;
 	inputRightVu.value = cmd.rightLevel;
 	inputGain.value = cmd.gain;
 	inputFade.value = cmd.fade;
+	
+	// Update touched. Determine if element released
+	LcdTouchCoords t = lcdGetTouch();
+	screenElementsTouch(inputElements, t);
 	
 	// Update all the controls
 	screenElementsUpdate(inputElements);
@@ -486,7 +540,7 @@ static void screenTask(void *pvParameters) {
 			screenTurnOff();
 		} else if (cmd.type == SCREEN_STARTUP) {
 			screenShowStartup();
-			} else if (cmd.type == SCREEN_INPUT) {
+		} else if (cmd.type == SCREEN_INPUT) {
 			screenShowInput(cmd);
 		} else {
 			// Unknown type - use error rather than fatal as commands

@@ -13,6 +13,16 @@ volatile uint16_t gain0, gain1;
 // Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
 volatile bool uiQueueFullFlag;
 
+// Timer tick
+static void uiTickCallback(xTimerHandle pxTimer) {
+	UiEvent event = {
+		.type = UI_TICK,
+	};
+	if (!xQueueSendToBack(uiQueue, &event, 0)) {
+		uiQueueFullFlag = true;
+	}
+}
+
 // Update gain to pot. Execute while holding the SPI mutex. 
 static void updateGain(void) {
 	uint16_t vol = gain0;
@@ -39,6 +49,19 @@ static void uiHandleEncoderEvent(EncoderMove *p) {
 	// TODO: update NV pot after changes stop for a while
 }
 
+// Handle the UI_TICK event
+static void uiHandleTickEvent(void) {
+	// TODO(avg): add real data
+	ScreenCommand input = {
+		.type = SCREEN_INPUT,
+		.leftLevel = 30,
+		.rightLevel = 70,
+		.gain = gain0,
+		.fade = 50,
+	};
+	screenSendCommand(&input);
+}
+
 // Fetch volume from pot. Execute while holding the SPI mutex.
 static void getVolume(void) {
 	// Read r0
@@ -60,16 +83,7 @@ static void uiTask(void *pvParameters) {
 	screenSendCommand(&init);
 	ScreenCommand startup = {.type = SCREEN_STARTUP};
 	screenSendCommand(&startup);
-	
-	// TODO(avg): remove this hack
-	ScreenCommand input = {
-		.type = SCREEN_INPUT,
-		.leftLevel = 30,
-		.rightLevel = 70,
-		.gain = 90,
-		.fade = 50,
-	};
-	screenSendCommand(&input);
+	vTaskDelay(MS_TO_TICKS(700));
 	
 	// Get an event, deal with it
 	while (1) {
@@ -79,6 +93,8 @@ static void uiTask(void *pvParameters) {
 		}
 		if (event.type == UI_ENCODER) {
 			uiHandleEncoderEvent(&event.encMove);
+		} else if (event.type == UI_TICK) {
+			uiHandleTickEvent();
 		} else {
 			// Unknown type
 			fatalBlink(1, 3);
@@ -92,12 +108,15 @@ void startUi(void) {
 	// Let's see.
 	uiQueue = xQueueCreate(10, sizeof(UiEvent));
 	
-	portBASE_TYPE t = xTaskCreate(
+	xTimerHandle timer = xTimerCreate("UI_TICK", MS_TO_TICKS(20), true, NULL, uiTickCallback);
+	xTimerStart(timer, 0);
+	
+	portBASE_TYPE task = xTaskCreate(
 		uiTask,
 		USTR("UI"),
 		configMINIMAL_STACK_SIZE * 4,
 		NULL,
 		tskIDLE_PRIORITY + 2, // More important than the CLI
 		NULL);
-	ASSERT_BLINK(t, 2, 3);
+	ASSERT_BLINK(task, 2, 3);
 }
