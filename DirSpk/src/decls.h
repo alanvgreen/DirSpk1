@@ -203,6 +203,15 @@ typedef struct {
 			uint8_t gain;
 			uint8_t fade;
 		};
+		// For generate mode
+		struct {
+			uint8_t off;
+			uint8_t tone;
+			uint8_t tune1;
+			uint8_t tune2;
+			uint8_t volume;
+			uint8_t note;	
+		};
 	};
 } ScreenCommand;
 
@@ -221,6 +230,8 @@ void startScreen(void);
 typedef enum {
 	UI_ENCODER,  // Event with encoder movement
 	UI_TICK, // Tick to update screen, tune, etc
+	UI_GOTO_GENERATE, // A touch has occurred asking for the GENERATE page
+	UI_GOTO_INPUT, // A touch has occurred asking for the INPUT page
 } UiType;
 
 // The Queue item
@@ -233,6 +244,10 @@ typedef struct {
 
 // UiQueue for events from encoders, touch, etc. Contains UiEvents
 extern xQueueHandle uiQueue;
+
+// Put an event in the UI Queue with just a type.
+// Not useful for events with parameters
+extern void uiSendEvent(UiType type);
 	
 // Gain for channels zero and 1. Written by: UI task.
 // This is a convenient reflection of the last set values.

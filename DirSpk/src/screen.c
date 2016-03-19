@@ -257,6 +257,9 @@ typedef struct ScreenElement {
 	// Callback when element is released
 	void (*released)(struct ScreenElement *);
 	
+	// For callbacks that cause a UI event, the eventype
+	UiType releaseEventType;
+	
 	// Optional data to help smooth out re-draw
 	uint16_t lastValue;
 	bool lastIsTouched;
@@ -273,6 +276,10 @@ static void screenElementsInit(ScreenElement **p) {
 		}
 		p++;
 	}
+}
+
+static void screenElementSendCommand(ScreenElement *p) {
+	uiSendEvent(p->releaseEventType);
 }
 
 static bool screenElementContains(ScreenElement *p, LcdTouchCoords tc) {
@@ -308,6 +315,7 @@ static void screenElementsUpdate(ScreenElement **p) {
 
 // Standard init - make a silver rectangle
 static void screenElementDefaultInit(ScreenElement *p) {
+	p->lastValue = 0xff;
 	lcdSetActiveWindow(p->x0, p->y0, p->x1, p->y1);
 	lcdClearWindow(COL_black);
 	lcdRoundedRect(p->x0 + 2, p->y0 + 2, p->x1 - 2, p->y1 - 2, 
@@ -460,9 +468,6 @@ static void screenTurnOff(void) {
 	lcdSetReg(0x01, 0x00); // Off
 }
 
-//
-// show/handle Input mode screen
-//
 static ScreenElement inputLeftVu = {
 	.id = 1,
 	.x0 = 0, .y0 = 0, .x1 = 239, .y1 = 479,
@@ -492,6 +497,8 @@ static ScreenElement inputModeSwitch = {
 	.x0 = 480, .y0 = 360, .x1 = 799, .y1 = 479,
 	.init = screenElementDefaultInit,
 	.update = screenElementDefaultUpdate,
+	.released = screenElementSendCommand,
+	.releaseEventType = UI_GOTO_GENERATE,
 };
 
 // The list of elements for the input mode
@@ -501,7 +508,7 @@ static ScreenElement *inputElements[] = {
 	NULL
 };
 
-// TODO: touch
+// Handle show input command
 static void screenShowInput(ScreenCommand cmd) {
 	bool firstShow = (screenMode != SCREEN_INPUT);
 	screenMode = SCREEN_INPUT;
@@ -524,6 +531,86 @@ static void screenShowInput(ScreenCommand cmd) {
 	screenElementsUpdate(inputElements);
 }
 
+
+// elements for generate
+
+static ScreenElement generateOff = {
+	.id = 1,
+	.x0 = 0, .y0 = 0, .x1 = 479, .y1 = 119,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement generateTone = {
+	.id = 2,
+	.x0 = 0, .y0 = 120, .x1 = 479, .y1 = 239,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement generateTune1 = {
+	.id = 3,
+	.x0 = 0, .y0 = 240, .x1 = 479, .y1 = 359,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement generateTune2 = {
+	.id = 4,
+	.x0 = 0, .y0 = 360, .x1 = 479, .y1 = 479,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement generateVolume = {
+	.id = 10,
+	.x0 = 480, .y0 = 0, .x1 = 799, .y1 = 180,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement generateNote = {
+	.id = 11,
+	.x0 = 480, .y0 = 180, .x1 = 799, .y1 = 359,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement generateModeSwitch = {
+	.id = 12,
+	.x0 = 480, .y0 = 360, .x1 = 799, .y1 = 479,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+	.released = screenElementSendCommand,
+	.releaseEventType = UI_GOTO_INPUT,
+};
+
+// The list of elements for the input mode
+static ScreenElement *generateElements[] = {
+	&generateOff, &generateTone, &generateTune1, &generateTune2,
+	&generateVolume, &generateNote, &generateModeSwitch,
+	NULL
+};
+
+// Handle show generate command
+static void screenShowGenerate(ScreenCommand cmd) {
+	bool firstShow = (screenMode != SCREEN_GENERATE);
+	screenMode = SCREEN_GENERATE;
+	if (firstShow) {
+		lcdClearAll(COL_black);
+		screenElementsInit(generateElements);
+	}
+
+	// Update values from cmd
+	generateOff.value = cmd.off;
+	generateTone.value = cmd.tone;
+	generateTune1.value = cmd.tune1;
+	generateTune2.value = cmd.tune2;
+	generateVolume.value = cmd.volume;
+	generateNote.value = cmd.note;
+
+	// Update touched. Determine if element released
+	LcdTouchCoords t = lcdGetTouch();
+	screenElementsTouch(generateElements, t);
+
+	// Update all the controls
+	screenElementsUpdate(generateElements);	
+}
+
 // Runs everything that sends commands to the screen
 static void screenTask(void *pvParameters) {
 	while (1) {
@@ -542,6 +629,8 @@ static void screenTask(void *pvParameters) {
 			screenShowStartup();
 		} else if (cmd.type == SCREEN_INPUT) {
 			screenShowInput(cmd);
+		} else if (cmd.type == SCREEN_GENERATE) {
+			screenShowGenerate(cmd);
 		} else {
 			// Unknown type - use error rather than fatal as commands
 			// can be sent via CLI
