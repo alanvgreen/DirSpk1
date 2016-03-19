@@ -8,7 +8,7 @@ xSemaphoreHandle spiMutex;
 // Start the SPI subsystem
 void startSpi(void) {
 	spiMutex = xSemaphoreCreateMutex();
-	ASSERT_BLINK(spiMutex, 4, 1);
+	ASSERT_BLINK(spiMutex, 1, 4);
 }
 
 #define SPI_TIMEOUT_MS 1000
@@ -17,7 +17,7 @@ void startSpi(void) {
 void spiWithMutex(void (*fn)(void)) {
 	// Take the mutex
 	if (!xSemaphoreTake(spiMutex, 1000)) {
-		fatalBlink(4, 2);
+		fatalBlink(2, 4);
 	}
 	
 	// Do the thing
@@ -25,7 +25,7 @@ void spiWithMutex(void (*fn)(void)) {
 	
 	// Return Mutex
 	if (!xSemaphoreGive(spiMutex)) {
-		fatalBlink(4, 3);
+		fatalBlink(3, 4);
 	}
 }
 
@@ -41,14 +41,14 @@ uint16_t spiSendReceive(uint32_t datum) {
 	// Transmit datum
 	SPI0->SPI_TDR = datum;
 	
-	// Busy-ish waiting. At 10MHz, will take 1.6uS to send 16bits
+	// Busy-ish waiting. At 1MHz, will take at least 16uS to send 16bits
 	// TODO: Use an interrupt + queue instead.
 	while (((SPI0->SPI_SR & SPI_SR_RDRF) == 0) && (xTaskGetTickCount() < timeout)) {
 		portYIELD();
 	}
 	
 	if (xTaskGetTickCount() >= timeout) {
-		errorBlink(4, 1);
+		errorBlink(4, 4);
 	}
 	return SPI0->SPI_RDR;
 }

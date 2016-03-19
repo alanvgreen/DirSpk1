@@ -27,7 +27,6 @@ static char const *MSG_RESPONSE = "Response: ";
 static char const *MSG_SCREEN_REG_INVALID = "Register must be in range 00..ff\r\n";
 static char const *MSG_SCREEN_DATA_INVALID = "Data must be in range 00..ff\r\n";
 static char const *MSG_SCREEN_CMD_INVALID = "Screen command number not valid\r\n";
-static char const *MSG_SCREEN_QUEUE_FAILED = "Failed to post to screen queue\r\n";
 
 static char const POT_REG_NAMES[6][7] = {
 	"R0    ",
@@ -58,7 +57,7 @@ static uint8_t cmdBuf[cmdBufSize];
 static void consoleWriteTxBuf(void) {
 	status_code_t rc = freertos_uart_write_packet(
 	    freeRTOSUART, txBuf, strlen((char *) txBuf), MS_TO_TICKS(IO_WAIT_MS));
-	ASSERT_BLINK(rc == STATUS_OK, 3, 2);
+	ASSERT_BLINK(rc == STATUS_OK, 2, 8);
 	txBuf[0] = '\0';
 }
 
@@ -559,10 +558,7 @@ const int8_t *pcCommandString) {
 	ScreenCommand cmd = {
 		.type = type,
 	};
-	if (!xQueueSendToBack(screenQueue, &cmd, 500)) {
-		consoleWrite(MSG_SCREEN_QUEUE_FAILED);
-		return pdFALSE;
-	}
+	screenSendCommand(&cmd);
 	return pdFALSE;
 }
 	
@@ -646,5 +642,5 @@ void startCli(void) {
 		NULL,
 		tskIDLE_PRIORITY + 1, 
 		NULL);
-	ASSERT_BLINK(t, 3, 1);
+	ASSERT_BLINK(t, 1, 8);
 }

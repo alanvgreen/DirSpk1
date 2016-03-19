@@ -100,7 +100,7 @@ static void initUart(void) {
 		UART,
 		&uart_settings,
 		&driver_options);
-	ASSERT_BLINK(freeRTOSUART, 2, 1);
+	ASSERT_BLINK(freeRTOSUART, 1, 7);
 }
 
 // Initialize TC0 channel 0 and 1

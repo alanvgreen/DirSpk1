@@ -1,19 +1,19 @@
 /*
-* util.c
-*/
+ * util.c
+ */
 
 #include "decls.h"
 
 // Stack overflow - blink out a pattern
 extern void vApplicationStackOverflowHook( xTaskHandle, signed char *);
 void vApplicationStackOverflowHook(xTaskHandle pxTask, signed char *pcTaskName) {
-	fatalBlink(10, 1);
+	fatalBlink(1, 10);
 }
 
 // Malloc failed - blink out a pattern
 extern void vApplicationMallocFailedHook( void );
 void vApplicationMallocFailedHook(void) {
-	fatalBlink(10, 2);
+	fatalBlink(2, 10);
 }
 
 // Do a pattern of blinks

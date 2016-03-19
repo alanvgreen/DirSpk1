@@ -25,5 +25,5 @@ int main(void) {
 	vTaskStartScheduler();
 	
 	// Should not get here - task scheduler ought not return
-	fatalBlink(5, 1);
+	fatalBlink(1, 9);
 }

@@ -55,6 +55,12 @@ static void uiTask(void *pvParameters) {
 	// Initialize the UI global state
 	spiWithMutex(getVolume);
 	
+	// Show startup screen
+	ScreenCommand init = {.type = SCREEN_INIT};
+	screenSendCommand(&init);
+	ScreenCommand startup = {.type = SCREEN_STARTUP};
+	screenSendCommand(&startup);
+	
 	// Get an event, deal with it
 	while (1) {
 		UiEvent event;
@@ -65,7 +71,7 @@ static void uiTask(void *pvParameters) {
 			uiHandleEncoderEvent(&event.encMove);
 		} else {
 			// Unknown type
-			fatalBlink(5, 2);
+			fatalBlink(1, 3);
 		}
 	}
 }
@@ -83,5 +89,5 @@ void startUi(void) {
 		NULL,
 		tskIDLE_PRIORITY + 2, // More important than the CLI
 		NULL);
-	ASSERT_BLINK(t, 5, 1);
+	ASSERT_BLINK(t, 2, 3);
 }

@@ -184,17 +184,21 @@ extern void startCli(void);
 
 // Commands to send to the screen
 typedef enum {
-	// Empty command - error
-	SCREEN_NONE = 0,
-	// Initialize the screen
-	SCREEN_INIT,
+	SCREEN_NONE = 0, // Empty command - error
+	SCREEN_OFF, // Turn it off. Used while debugging
+	SCREEN_INIT, // Initialize the screen
+	SCREEN_STARTUP, // Display splash screen
+	SCREEN_INPUT, // Display input mode
+	SCREEN_GENERATE, // Display generate mode 
 } ScreenCommandType;
+
+// The commands that are sent
 typedef struct {
 	ScreenCommandType type;
 } ScreenCommand;
 
-// Queue for screen commands
-extern xQueueHandle screenQueue;
+// Put a command in the screen queue
+extern void screenSendCommand(ScreenCommand *command);
 
 // Start the screen
 void startScreen(void);

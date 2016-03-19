@@ -1246,6 +1246,9 @@
     <None Include="src\config\conf_clock.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\colors.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\decls.h">
       <SubType>compile</SubType>
     </Compile>
