@@ -29,7 +29,7 @@ static const char *MSG_DIRSPK1 = "DirSpk1";
 // Private state
 //
 
-// Not all types are modes, but it's close enough to be useful
+// Not all command types are modes, but it's close enough to be useful
 static ScreenCommandType screenMode;
 
 #define BUF_LEN 40
@@ -44,9 +44,10 @@ static xQueueHandle screenQueue;
 
 // Default wait for screen queue
 #define SCREEN_QUEUE_WAIT_MS 1000
+
+// Send a command to the screen queue
 void screenSendCommand(ScreenCommand *command) {
 	if (!xQueueSendToBack(screenQueue, command, SCREEN_QUEUE_WAIT_MS)) {
-		// TODO(avg): reenable this
 		fatalBlink(4, 5);
 	}
 }
@@ -142,7 +143,7 @@ static inline void lcdSetForegroundColor(uint32_t color) {
 }
 
 // Make a rounded-rectangle. The internal space will be set to
-// the background color
+// the fill color
 static inline void lcdRoundedRect(
 uint16_t x0, uint16_t y0, 
 uint16_t x1, uint16_t y1, 
