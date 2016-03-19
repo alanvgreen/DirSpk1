@@ -48,7 +48,7 @@ static xQueueHandle screenQueue;
 // Send a command to the screen queue
 void screenSendCommand(ScreenCommand *command) {
 	if (!xQueueSendToBack(screenQueue, command, SCREEN_QUEUE_WAIT_MS)) {
-		fatalBlink(4, 5);
+		//fatalBlink(4, 5);
 	}
 }
 
@@ -622,30 +622,36 @@ static void screenShowGenerate(ScreenCommand cmd) {
 
 // Runs everything that sends commands to the screen
 static void screenTask(void *pvParameters) {
+	// Check whether LCD is connected (often missing in development)
+	bool displayConnected = lcdStatusRead() != 0xff;
+	
+	// Command loop - pull from queue and execute
 	while (1) {
 		ScreenCommand cmd;
 		if (!xQueueReceive(screenQueue, &cmd, 997)) {
 			continue;
 		}
 		
-		// Assume that all commands take the SPI mutex
-		ACQUIRE_SPI_MUTEX;
-		if (cmd.type == SCREEN_INIT) {
-			screenInitLcd();
-		} else if (cmd.type == SCREEN_OFF) {
-			screenTurnOff();
-		} else if (cmd.type == SCREEN_STARTUP) {
-			screenShowStartup();
-		} else if (cmd.type == SCREEN_INPUT) {
-			screenShowInput(cmd);
-		} else if (cmd.type == SCREEN_GENERATE) {
-			screenShowGenerate(cmd);
-		} else {
-			// Unknown type - use error rather than fatal as commands
-			// can be sent via CLI
-			errorBlink(5, 5);
+		if (displayConnected) {	
+			// Assume that all commands take the SPI mutex
+			ACQUIRE_SPI_MUTEX;
+			if (cmd.type == SCREEN_INIT) {
+				screenInitLcd();
+			} else if (cmd.type == SCREEN_OFF) {
+				screenTurnOff();
+			} else if (cmd.type == SCREEN_STARTUP) {
+				screenShowStartup();
+			} else if (cmd.type == SCREEN_INPUT) {
+				screenShowInput(cmd);
+			} else if (cmd.type == SCREEN_GENERATE) {
+				screenShowGenerate(cmd);
+			} else {
+				// Unknown type - use error rather than fatal as commands
+				// can be sent via CLI
+				errorBlink(5, 5);
+			}
+			RELEASE_SPI_MUTEX;
 		}
-		RELEASE_SPI_MUTEX;
 	}
 }
 
