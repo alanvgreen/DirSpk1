@@ -47,14 +47,24 @@ typedef enum {
 	AM_ADC,
 	
 	// Given Value to output
-	AM_FREQ	
+	AM_VALUE	
 } AudioMode;
 
-// The current mode
-extern AudioMode audioMode;
+// Set the audio mode
+void audioModeSet(AudioMode m);
 
-// The value to output - range from 1 to US_PERIOD - 2, inclusive
-extern uint16_t audioValue;
+// The value to output - range from 0 to 4096 (12 bits)
+extern volatile uint16_t audioValue;
+
+//
+// Notes
+//
+
+// From a numbered note, derive a frequency
+extern uint32_t noteToFrequency(uint8_t note);
+
+// From a numbered note return a name. p must be at least 3 chars long
+extern void noteToName(uint8_t note, char *p);
 
 
 //
@@ -232,6 +242,10 @@ typedef enum {
 	UI_TICK, // Tick to update screen, tune, etc
 	UI_GOTO_GENERATE, // A touch has occurred asking for the GENERATE page
 	UI_GOTO_INPUT, // A touch has occurred asking for the INPUT page
+	UI_GEN_OFF, // Generate nothing
+	UI_GEN_TONE, // Generate a tone
+	UI_GEN_TUNE1, // Play Tune #1
+	UI_GEN_TUNE2, // Play Tune #2
 } UiType;
 
 // The Queue item

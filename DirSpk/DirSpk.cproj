@@ -1262,6 +1262,9 @@
     <Compile Include="src\init.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\note.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\screen.c">
       <SubType>compile</SubType>
     </Compile>

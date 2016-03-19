@@ -14,12 +14,27 @@ volatile uint16_t gain0, gain1;
 volatile bool uiQueueFullFlag;
 
 // Internal state variables
+
+// Overall UI Mode
 static enum {
 	ModeSplash,
 	ModeGenerate,
 	ModeInput,
 } uiMode = ModeSplash;
-portTickType finishSplashTicks = 0xffff;
+
+// Time at which a mode change is allowed
+portTickType modeLockedUntil = 0xffffffff;
+
+// for how long a mode is locked
+#define MODE_LOCK_MS 250
+
+// Generate Sub modes
+static enum {
+	GenOff,
+	GenTone,
+	GenTune1,
+	GenTune2,
+} generateSubMode = GenOff;
 
 // Util function for sending an event with no data, just a type
 void uiSendEvent(UiType type) {
@@ -69,7 +84,7 @@ static void uiHandleTickEvent(void) {
 	
 	if (uiMode == ModeSplash) {
 		// Don't do anything until splash count down
-		if (xTaskGetTickCount() >= finishSplashTicks) {
+		if (xTaskGetTickCount() >= modeLockedUntil) {
 			uiMode = ModeInput;
 		}
 	} else if (uiMode == ModeInput) {
@@ -84,16 +99,81 @@ static void uiHandleTickEvent(void) {
 	} else if (uiMode == ModeGenerate) {
 		ScreenCommand generate = {
 			.type = SCREEN_GENERATE,
-			.off = 0,
-			.tone = 1,
-			.tune1 = 0,
-			.tune2 = 0,
+			.off = generateSubMode == GenOff,
+			.tone = generateSubMode == GenTone,
+			.tune1 = generateSubMode == GenTune1,
+			.tune2 = generateSubMode == GenTune2,
 			.volume = 196,
 			.note = 0x40,  //C4
 		};
 		screenSendCommand(&generate);
 	}
 }
+
+// Handle request to turn generation off
+static void uiHandleGenerateOff(void) {
+	if (uiMode != ModeGenerate) {
+		// Should only get this even in generate mode
+		return;
+	}
+	generateSubMode = GenOff;
+	audioModeSet(AM_OFF);
+	// TODO: turn off tone generator
+}
+
+// Handle request to turn tone generation on
+static void uiHandleGenerateTone(void) {
+	if (uiMode != ModeGenerate) {
+		// Should only get this even in generate mode
+		return;
+	}
+	generateSubMode = GenTone;
+	audioModeSet(AM_VALUE);
+	// TODO: turn on tone generator
+}
+
+// Handle request to turn tune1 on
+static void uiHandleGenerateTune1(void) {
+	if (uiMode != ModeGenerate) {
+		// Should only get this even in generate mode
+		return;
+	}
+	generateSubMode = GenTune1;
+	audioModeSet(AM_VALUE);
+	// TODO: turn on tone generator
+}
+
+// Handle request to turn tune2 on
+static void uiHandleGenerateTune2(void) {
+	if (uiMode != ModeGenerate) {
+		// Should only get this even in generate mode
+		return;
+	}
+	generateSubMode = GenTune2;
+	audioModeSet(AM_VALUE);
+	// TODO: turn on tone generator
+}
+
+
+// Handle request to goto generate page
+static void uiHandleGotoGenerate(void) {
+	if (xTaskGetTickCount() > modeLockedUntil) {
+		uiMode = ModeGenerate;
+		uiHandleGenerateOff();
+		modeLockedUntil = xTaskGetTickCount() + MS_TO_TICKS(MODE_LOCK_MS);
+	}
+}
+
+// Handle request to goto input page
+static void uiHandleGotoInput(void) {
+	if (xTaskGetTickCount() > modeLockedUntil) {
+		// TODO(avg): turn off any generation
+		uiMode = ModeInput;
+		audioModeSet(AM_ADC);
+		modeLockedUntil = xTaskGetTickCount() + MS_TO_TICKS(MODE_LOCK_MS);
+	}
+}
+
 
 // Fetch volume from pot. Execute while holding the SPI mutex.
 static void getVolume(void) {
@@ -106,7 +186,7 @@ static void getVolume(void) {
 
 // The ui coordinator task.
 static void uiTask(void *pvParameters) {
-	finishSplashTicks = xTaskGetTickCount() + MS_TO_TICKS(700);
+	modeLockedUntil = xTaskGetTickCount() + MS_TO_TICKS(700);
 	
 	// Initialize the UI global state
 	spiWithMutex(getVolume);
@@ -129,9 +209,17 @@ static void uiTask(void *pvParameters) {
 		} else if (event.type == UI_TICK) {
 			uiHandleTickEvent();
 		} else if (event.type == UI_GOTO_GENERATE) {
-			uiMode = ModeGenerate;
+			uiHandleGotoGenerate();
 		} else if (event.type == UI_GOTO_INPUT) {
-			uiMode = ModeInput;
+			uiHandleGotoInput();
+		} else if (event.type == UI_GEN_OFF) {
+			uiHandleGenerateOff();
+		} else if (event.type == UI_GEN_TONE) {
+			uiHandleGenerateTone();
+		} else if (event.type == UI_GEN_TUNE1) {
+			uiHandleGenerateTune1();
+		} else if (event.type == UI_GEN_TUNE2) {
+			uiHandleGenerateTune2();
 		} else {
 			// Unknown type
 			fatalBlink(1, 3);

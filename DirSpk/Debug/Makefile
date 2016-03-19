@@ -139,6 +139,7 @@ C_SRCS +=  \
 ../src/dirspk_main.c \
 ../src/encoder.c \
 ../src/init.c \
+../src/note.c \
 ../src/screen.c \
 ../src/spi.c \
 ../src/ui.c \
@@ -188,6 +189,7 @@ src/ASF/common/services/delay/sam/cycle_counter.o \
 src/dirspk_main.o \
 src/encoder.o \
 src/init.o \
+src/note.o \
 src/screen.o \
 src/spi.o \
 src/ui.o \
@@ -230,6 +232,7 @@ src/ASF/common/services/delay/sam/cycle_counter.o \
 src/dirspk_main.o \
 src/encoder.o \
 src/init.o \
+src/note.o \
 src/screen.o \
 src/spi.o \
 src/ui.o \
@@ -272,6 +275,7 @@ src/ASF/common/services/delay/sam/cycle_counter.d \
 src/dirspk_main.d \
 src/encoder.d \
 src/init.d \
+src/note.d \
 src/screen.d \
 src/spi.d \
 src/ui.d \
@@ -314,6 +318,7 @@ src/ASF/common/services/delay/sam/cycle_counter.d \
 src/dirspk_main.d \
 src/encoder.d \
 src/init.d \
+src/note.d \
 src/screen.d \
 src/spi.d \
 src/ui.d \
@@ -334,6 +339,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

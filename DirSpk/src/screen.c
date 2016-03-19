@@ -539,24 +539,32 @@ static ScreenElement generateOff = {
 	.x0 = 0, .y0 = 0, .x1 = 479, .y1 = 119,
 	.init = screenElementDefaultInit,
 	.update = screenElementDefaultUpdate,
+	.released = screenElementSendCommand,
+	.releaseEventType = UI_GEN_OFF,
 };
 static ScreenElement generateTone = {
 	.id = 2,
 	.x0 = 0, .y0 = 120, .x1 = 479, .y1 = 239,
 	.init = screenElementDefaultInit,
 	.update = screenElementDefaultUpdate,
+	.released = screenElementSendCommand,
+	.releaseEventType = UI_GEN_TONE,
 };
 static ScreenElement generateTune1 = {
 	.id = 3,
 	.x0 = 0, .y0 = 240, .x1 = 479, .y1 = 359,
 	.init = screenElementDefaultInit,
 	.update = screenElementDefaultUpdate,
+	.released = screenElementSendCommand,
+	.releaseEventType = UI_GEN_TUNE1,
 };
 static ScreenElement generateTune2 = {
 	.id = 4,
 	.x0 = 0, .y0 = 360, .x1 = 479, .y1 = 479,
 	.init = screenElementDefaultInit,
 	.update = screenElementDefaultUpdate,
+	.released = screenElementSendCommand,
+	.releaseEventType = UI_GEN_TUNE2,
 };
 static ScreenElement generateVolume = {
 	.id = 10,
