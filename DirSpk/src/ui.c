@@ -61,6 +61,16 @@ static void uiTask(void *pvParameters) {
 	ScreenCommand startup = {.type = SCREEN_STARTUP};
 	screenSendCommand(&startup);
 	
+	// TODO(avg): remove this hack
+	ScreenCommand input = {
+		.type = SCREEN_INPUT,
+		.leftLevel = 30,
+		.rightLevel = 70,
+		.gain = 90,
+		.fade = 50,
+	};
+	screenSendCommand(&input);
+	
 	// Get an event, deal with it
 	while (1) {
 		UiEvent event;

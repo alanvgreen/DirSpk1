@@ -195,6 +195,15 @@ typedef enum {
 // The commands that are sent
 typedef struct {
 	ScreenCommandType type;
+	union {
+		// For input mode
+		struct {
+			uint8_t leftLevel;
+			uint8_t rightLevel;
+			uint8_t gain;
+			uint8_t fade;
+		};
+	};
 } ScreenCommand;
 
 // Put a command in the screen queue

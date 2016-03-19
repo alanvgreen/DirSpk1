@@ -24,6 +24,20 @@ static const char *MSG_DIRSPK1 = "DirSpk1";
 		2, 5)
 #define RELEASE_SPI_MUTEX \
 	ASSERT_BLINK(xSemaphoreGive(spiMutex), 3, 5)
+	
+//
+// Private state
+//
+
+// Not all types are modes, but it's close enough to be useful
+static ScreenCommandType screenMode;
+
+#define BUF_LEN 40
+static char buf[BUF_LEN];
+
+//
+// The screen command queue
+//
 
 // Queue for screen commands
 static xQueueHandle screenQueue;
@@ -35,6 +49,10 @@ void screenSendCommand(ScreenCommand *command) {
 		fatalBlink(4, 5);
 	}
 }
+
+//
+// LCD driving code
+//
 
 // Basic LCD driving commands
 static uint8_t lcdStatusRead(void) {
@@ -138,12 +156,112 @@ uint32_t borderColor, int32_t fillColor) {
 	lcdWaitNotBusy();
 }
 
-// Clear the screen
-static void lcdClear(uint32_t color) {
+// Clear the whole screen
+static void lcdClearAll(uint32_t color) {
 	lcdSetBackgroundColor(color);
-	lcdSetReg(0x8e, 0x80); // Clear screen
+	lcdSetReg(0x8e, 0x80); // Clear whole screen
 	lcdWaitNotBusy();
 }
+
+// Clear the active window
+static void lcdClearWindow(uint32_t color) {
+	lcdSetBackgroundColor(color);
+	lcdSetReg(0x8e, 0xc0); // Clear active window
+	lcdWaitNotBusy();
+}
+
+// Set the font being used
+static void lcdSetArialFont(void) {
+	lcdSetReg(0x2f, 0x11); // ROM type 0, Ascii, Arial
+}
+
+// Set Bold, fixed width font
+static void lcdSetBoldFont(void) {
+	lcdSetReg(0x2f, 0x13); // ROM type 0, Ascii, bold fixed witdth
+}
+
+//
+// Code for Screen elements in modes
+//
+typedef struct ScreenElement {
+	// ID number for this element
+	uint16_t id;
+	
+	// Screen position - also touch area
+	uint16_t x0, y0, x1, y1;
+	
+	// Most current value
+	uint16_t value;
+	
+	// Whether element is being touched
+	bool isTouched;
+	
+	// Initialize state + initial screen drawing, if any
+	void (*init)(struct ScreenElement *);
+	
+	// Command to updated self - draw on screen + any state
+	void (*update)(struct ScreenElement *);
+	
+	// Callback when element is released
+	void (*released)(struct ScreenElement *);
+	
+	// Optional pointer to additional data
+	void *pData;
+} ScreenElement;
+
+// Initialize all elements in a list
+static void screenElementsInit(ScreenElement **p) {
+	while (*p) {
+		if ((*p)->init) {
+			(*p)->init(*p);
+		}
+		p++;
+	}
+}
+
+// Initialize all elements in a list
+static void screenElementsUpdate(ScreenElement **p) {
+	while (*p) {
+		if ((*p)->update) {
+			(*p)->update(*p);
+		}
+		p++;
+	}
+}
+
+// Standard init - make a silver rectangle
+static void screenElementDefaultInit(ScreenElement *p) {
+	lcdSetActiveWindow(p->x0, p->y0, p->x1, p->y1);
+	lcdClearWindow(COL_black);
+	lcdRoundedRect(p->x0 + 2, p->y0 + 2, p->x1 - 2, p->y1 - 2, 
+	    10, 5, COL_silver, COL_black);
+}
+
+// Write a bold font string centered on a point, in 4x font
+static void screenWriteOnPoint(uint16_t x, uint16_t y, char *p) {
+	uint16_t w = strlen(p) * 8 * 4;
+	int16_t h = 16 * 4;
+	lcdSetBoldFont();
+	lcdSetTextParams(x - w / 2, y - h / 2, 3, 3);
+	lcdWriteString(p);
+}
+
+// Standard update - write value in center-ish of area
+static void screenElementDefaultUpdate(ScreenElement *p) {
+	lcdSetActiveWindow(p->x0, p->y0, p->x1, p->y1);
+	
+	// Right in the middle
+	lcdSetForegroundColor(COL_lime);
+	snprintf(buf, BUF_LEN, "%u", p->value);
+	uint16_t w = p->x1 - p->x0;
+	uint16_t h = p->y1 - p->y0;
+	screenWriteOnPoint(p->x0 + w / 2, p->y0 + h / 2, buf);
+}
+
+
+//
+// Code for individual modes
+//
 
 // Initialize the LCD panel
 static void screenInitLcd(void) {
@@ -158,8 +276,11 @@ static void screenInitLcd(void) {
 	vTaskDelay(MS_TO_TICKS(1));
 	ACQUIRE_SPI_MUTEX;
 	
-	// TODO(avg): set SPI up to 10MHz here.
-	// Actually 40MHz is OK for writes, but needs testing for signal
+	// Set SPI up to 10MHz here.
+	// TODO(avg): Allow 20MHz for writes / 10MHz for reads, later
+	uint32_t clk = 0xff & div_ceil(sysclk_get_cpu_hz(), 10 * 1000 * 1000);
+	// Sets NCPHA = 1, CPOL = 1
+	SPI0->SPI_CSR[1] = (clk << 8) + (8 << 4) + 1;
 	
 	
 	// TODO(avg) think about whether 2 windows @8bpp would be more useful
@@ -194,11 +315,11 @@ static void screenInitLcd(void) {
 	lcdSetReg(0x8b, 0xff); // Max brightness
 	lcdSetReg(0x01, 0x80); // On
 	
-	// Set External Arial font by default
+	// Set External Arial font
 	lcdSetReg(0x05, 0x28); // external timing magic
 	lcdSetReg(0x06, 0x03); // external timing magic
 	lcdSetReg(0x2e, 0x01); // single pixel between chars
-	lcdSetReg(0x2f, 0x11); // ROM type 0, Arial
+	lcdSetArialFont();
 	lcdSetReg(0x21, 0x20); // Enable external font
 	
 	// Just clearing the cobwebs - seems to help avoid missing text
@@ -207,7 +328,8 @@ static void screenInitLcd(void) {
 
 // Show startup page
 static void screenShowStartup(void) {
-	lcdClear(0x404040);
+	screenMode = SCREEN_STARTUP;
+	lcdClearAll(0x404040);
 	
 	lcdRoundedRect(50, 50, 749, 439, 15, 8, COL_silver, COL_black);
 	
@@ -241,7 +363,67 @@ static void screenShowStartup(void) {
 
 // Turn the screen off - for debugging
 static void screenTurnOff(void) {
+	screenMode = SCREEN_OFF;
 	lcdSetReg(0x01, 0x00); // Off
+}
+
+//
+// show/handle Input mode screen
+//
+static ScreenElement inputLeftVu = {
+	.id = 1,
+	.x0 = 0, .y0 = 0, .x1 = 239, .y1 = 479,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement inputRightVu = {
+	.id = 2,
+	.x0 = 240, .y0 = 0, .x1 = 479, .y1 = 479,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement inputGain = {
+	.id = 3,
+	.x0 = 480, .y0 = 0, .x1 = 799, .y1 = 179,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement inputFade = {
+	.id = 4,
+	.x0 = 480, .y0 = 180, .x1 = 799, .y1 = 359,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+static ScreenElement inputModeSwitch = {
+	.id = 5,
+	.x0 = 480, .y0 = 360, .x1 = 799, .y1 = 479,
+	.init = screenElementDefaultInit,
+	.update = screenElementDefaultUpdate,
+};
+
+// The list of elements for the input mode
+static ScreenElement *inputElements[] = {
+	&inputLeftVu, &inputRightVu, 
+	&inputGain, &inputFade, &inputModeSwitch, 
+	NULL
+};
+
+// TODO: touch
+static void screenShowInput(ScreenCommand cmd) {
+	bool firstShow = (screenMode != SCREEN_INPUT);
+	screenMode = SCREEN_INPUT;
+	if (firstShow) {
+		lcdClearAll(COL_black);
+		screenElementsInit(inputElements);
+	}
+	// Update values from cmd
+	inputLeftVu.value = cmd.leftLevel;
+	inputRightVu.value = cmd.rightLevel;
+	inputGain.value = cmd.gain;
+	inputFade.value = cmd.fade;
+	
+	// Update all the controls
+	screenElementsUpdate(inputElements);
 }
 
 // Runs everything that sends commands to the screen
@@ -260,6 +442,8 @@ static void screenTask(void *pvParameters) {
 			screenTurnOff();
 		} else if (cmd.type == SCREEN_STARTUP) {
 			screenShowStartup();
+			} else if (cmd.type == SCREEN_INPUT) {
+			screenShowInput(cmd);
 		} else {
 			// Unknown type - use error rather than fatal as commands
 			// can be sent via CLI
