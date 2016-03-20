@@ -43,7 +43,7 @@ static uint32_t freqTable[] = {
 };
 
 // From a numbered note, derive a frequency. Returns 0 on error
-extern uint32_t noteToFrequency(uint8_t note) {
+uint32_t noteToFrequency(uint8_t note) {
 	uint8_t i = note & 0xf;
 	if (i >= 12) {
 		return 0;
@@ -64,8 +64,29 @@ static char const *nameTable[] = {
 
 // From a numbered note return a name. p must be at least 4 chars long 
 // (3 chars + \0)
-extern void noteToName(uint8_t note, char *p) {
+void noteToName(uint8_t note, char *p) {
 	uint8_t i = note & 0xf;
 	uint16_t o = (note & 0xf0) >> 4;
 	snprintf(p, 4, "%s%1u", i < 12 ? nameTable[i] : "?", o < 10 ? o : 0);
+}
+
+
+// Go up one note
+uint8_t noteIncrement(uint8_t note) {
+	if ((note & 0xf) == 0xb) {
+		// Going up from B -> C one octave up
+		return (note & 0xf0) + 0x10;
+	} else {
+		return note + 1;
+	}
+}
+
+// Go down one note
+uint8_t noteDecrement(uint8_t note) {
+	if ((note &0xf) == 0) {
+		// going down from C -> B one octave down
+		return (note & 0xf0) - 0x10 + 0xb;
+	} else {
+		return note - 1;
+	}
 }

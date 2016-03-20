@@ -58,7 +58,6 @@ void audioModeSet(AudioMode m);
 extern volatile uint8_t audioVolume;
 
 // Set the frequency of the generated tone. 0 means off.
-// Called only from UI task, so mutex not needed.
 void audioFrequencySet(uint32_t hz);
 
 //
@@ -71,6 +70,11 @@ extern uint32_t noteToFrequency(uint8_t note);
 // From a numbered note return a name. p must be at least 3 chars long
 extern void noteToName(uint8_t note, char *p);
 
+// Go up one note
+extern uint8_t noteIncrement(uint8_t note);
+
+// Go down one note
+extern uint8_t noteDecrement(uint8_t note);
 
 //
 // Encoders
@@ -267,10 +271,6 @@ extern xQueueHandle uiQueue;
 // Put an event in the UI Queue with just a type.
 // Not useful for events with parameters
 extern void uiSendEvent(UiType type);
-	
-// Gain for channels zero and 1. Written by: UI task.
-// This is a convenient reflection of the last set values.
-extern volatile uint16_t gain0, gain1;
 	
 // Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
 extern volatile bool uiQueueFullFlag;

@@ -43,13 +43,13 @@ void PWM_Handler(void) {
 		// For testing with silence
 		// int32_t duty = US_PERIOD / 2;
 		PWM->PWM_CH_NUM[2].PWM_CDTYUPD = duty;	
-	} else { // Must be AM_VALUE
+	} else if (mode == AM_HZ) {
 		
 		// Get TIOA value from status register
 		bool mtioa = TC0->TC_CHANNEL[0].TC_SR & TC_SR_MTIOA;
 		
 		// Write to DACC
-		int16_t dDelta = 2048 * audioVolume / 255;
+		int16_t dDelta = 2046 * audioVolume / 255;
 		if (!mtioa) {
 			dDelta = -dDelta;
 		}
@@ -110,11 +110,15 @@ void audioModeSet(AudioMode m) {
 	switch (m) {
 		case AM_OFF:
 			pwm_channel_disable(PWM, PWM_CHANNEL_2);
+			dacc_disable_channel(DACC, 0);
 			break;
 		case AM_ADC:
 			pwm_channel_enable(PWM, PWM_CHANNEL_2);
+			dacc_enable_channel(DACC, 0);
+			break;
 		case AM_HZ:
 			pwm_channel_enable(PWM, PWM_CHANNEL_2);
+			dacc_enable_channel(DACC, 0);
 			break;
 	}
 }

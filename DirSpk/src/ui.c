@@ -7,9 +7,6 @@
 // UiQueue for events from encoders, touch, etc. Contains 
 xQueueHandle uiQueue;
 
-// Gain for channels zero and 1. Written by: UI task.
-volatile uint16_t gain0, gain1;
-
 // Whether UIQueue has ever been full. Set only. Written by: any sender to uiQueue.
 volatile bool uiQueueFullFlag;
 
@@ -23,7 +20,7 @@ static enum {
 } uiMode = ModeSplash;
 
 // Time at which a mode change is allowed
-portTickType modeLockedUntil = 0xffffffff;
+static portTickType modeLockedUntil = 0xffffffff;
 
 // for how long a mode is locked
 #define MODE_LOCK_MS 250
@@ -35,6 +32,14 @@ static enum {
 	GenTune1,
 	GenTune2,
 } generateSubMode = GenOff;
+
+// For generated tones
+static uint8_t volume; 
+static uint8_t note; 
+
+// For input mode
+static uint8_t gain;
+static uint8_t fade;
 
 // Util function for sending an event with no data, just a type
 void uiSendEvent(UiType type) {
@@ -53,24 +58,40 @@ static void uiTickCallback(xTimerHandle pxTimer) {
 
 // Update gain to pot. Execute while holding the SPI mutex. 
 static void updateGain(void) {
+	
+	
+	// TODO: incorporate gain and fade
+	/*
 	uint16_t vol = gain0;
 	// Set reg0
 	spiSendReceive((0 << 12) + vol);
 	// Set reg1
 	spiSendReceive((1 << 12) + vol);
+	*/
 }
 
 
 // Handled encoder moves
 static void uiHandleEncoderEvent(EncoderMove *p) {
-	// Set both pots to vol0
-	if (p->num == 3) {
-		int16_t val = gain0;
-		val += (p->dir == ENC_CW) ? 4 : -4;
-		val = max(min(val, 0x100), 0);
-		gain0 = gain1 = val;
-		spiWithMutex(updateGain);
+	// TODO: refit pots and re-instrument
+	if (uiMode == ModeGenerate) {
+		if (p->num == 2) {
+			if (p->dir == ENC_CW) {
+				note = noteIncrement(note);
+			} else {
+				note = noteDecrement(note);
+			}
+		}
+		if (p->num == 3) {
+			if (volume > 0 && p->dir == ENC_CCW) {
+				volume--;
+			} else if ((volume < 255) & (p->dir == ENC_CW)) {
+				volume++;
+			}
+		}
 	}
+	
+	// TODO: input mode
 	
 	// TODO: master + fade
 	// TODO: acceleration
@@ -92,7 +113,7 @@ static void uiHandleTickEvent(void) {
 			.type = SCREEN_INPUT,
 			.leftLevel = 30,
 			.rightLevel = 70,
-			.gain = gain0,
+			.gain = 23,
 			.fade = 50,
 		};
 		screenSendCommand(&input);
@@ -180,16 +201,20 @@ static void uiHandleGotoInput(void) {
 
 // Fetch volume from pot. Execute while holding the SPI mutex.
 static void getVolume(void) {
+	// TODO: figure gain, fade
+	/*
 	// Read r0
 	gain0 = spiSendReceive(0x0c00) & 0x1ff;
 
 	// Read r1
 	gain1 = spiSendReceive(0x1c00) & 0x1ff;	
+	*/
 }
 
 // The ui coordinator task.
 static void uiTask(void *pvParameters) {
 	modeLockedUntil = xTaskGetTickCount() + MS_TO_TICKS(700);
+	audioVolume = 255;
 	
 	// Initialize the UI global state
 	spiWithMutex(getVolume);
