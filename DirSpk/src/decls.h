@@ -46,15 +46,20 @@ typedef enum {
 	// Via ADC channels
 	AM_ADC,
 	
-	// Given Value to output
-	AM_VALUE	
+	// Given Hz to output
+	AM_HZ	
 } AudioMode;
 
 // Set the audio mode
 void audioModeSet(AudioMode m);
 
-// The value to output - range from 0 to 4096 (12 bits)
-extern volatile uint16_t audioValue;
+// The volume of the generated tone - 0 to 255
+// Written only from UI thread, so mutex not needed
+extern volatile uint8_t audioVolume;
+
+// Set the frequency of the generated tone. 0 means off.
+// Called only from UI task, so mutex not needed.
+void audioFrequencySet(uint32_t hz);
 
 //
 // Notes

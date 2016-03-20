@@ -103,9 +103,9 @@ static void initUart(void) {
 	ASSERT_BLINK(freeRTOSUART, 1, 7);
 }
 
-// Initialize TC0 channel 0 and 1
+// Initialize TC0 channel 0 for tone generation
 static void initTimers(void) {
-// 	pmc_enable_periph_clk(ID_TC0);
+ 	pmc_enable_periph_clk(ID_TC0);
 // 	
 // 	uint32_t ul_sysclk = sysclk_get_cpu_hz(); 
 // 	uint32_t ul_div, ul_tcclks;
@@ -172,7 +172,7 @@ static void initDac(void) {
 		0x08, // refresh = 8 - though we send new data more often than this
 		0, // not max speed
 		0x10); // startup = 640 periods
-	dacc_set_channel_selection(DACC, 0); // Have to revisit when have dual inputs
+	dacc_set_channel_selection(DACC, 0); // Have to revisit if have dual outputs
 	dacc_set_analog_control(DACC,
 		DACC_ACR_IBCTLCH0(0x02) |
 		DACC_ACR_IBCTLCH1(0x02) |

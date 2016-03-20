@@ -128,8 +128,9 @@ static void uiHandleGenerateTone(void) {
 		return;
 	}
 	generateSubMode = GenTone;
-	audioModeSet(AM_VALUE);
-	// TODO: turn on tone generator
+	audioModeSet(AM_HZ);
+	// Bottom C - 32Hz
+	audioFrequencySet(noteToFrequency(0x10));
 }
 
 // Handle request to turn tune1 on
@@ -139,8 +140,9 @@ static void uiHandleGenerateTune1(void) {
 		return;
 	}
 	generateSubMode = GenTune1;
-	audioModeSet(AM_VALUE);
-	// TODO: turn on tone generator
+	audioModeSet(AM_HZ);
+	// Middle C - 261Hz
+	audioFrequencySet(noteToFrequency(0x40));
 }
 
 // Handle request to turn tune2 on
@@ -150,8 +152,9 @@ static void uiHandleGenerateTune2(void) {
 		return;
 	}
 	generateSubMode = GenTune2;
-	audioModeSet(AM_VALUE);
-	// TODO: turn on tone generator
+	audioModeSet(AM_HZ);
+	// 4 octaves above middle c - 4.186kHz
+	audioFrequencySet(noteToFrequency(0x80)); 
 }
 
 
