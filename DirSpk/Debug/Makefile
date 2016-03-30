@@ -142,6 +142,7 @@ C_SRCS +=  \
 ../src/note.c \
 ../src/screen.c \
 ../src/spi.c \
+../src/tunes.c \
 ../src/ui.c \
 ../src/util.c
 
@@ -192,6 +193,7 @@ src/init.o \
 src/note.o \
 src/screen.o \
 src/spi.o \
+src/tunes.o \
 src/ui.o \
 src/util.o
 
@@ -235,6 +237,7 @@ src/init.o \
 src/note.o \
 src/screen.o \
 src/spi.o \
+src/tunes.o \
 src/ui.o \
 src/util.o
 
@@ -278,6 +281,7 @@ src/init.d \
 src/note.d \
 src/screen.d \
 src/spi.d \
+src/tunes.d \
 src/ui.d \
 src/util.d
 
@@ -321,6 +325,7 @@ src/init.d \
 src/note.d \
 src/screen.d \
 src/spi.d \
+src/tunes.d \
 src/ui.d \
 src/util.d
 
@@ -339,6 +344,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

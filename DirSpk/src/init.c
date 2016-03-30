@@ -28,10 +28,12 @@ static void initGpio(void) {
 	ioport_set_pin_dir(LED0_GPIO, IOPORT_DIR_OUTPUT);
 	
 	// PIOC - PC6,7 = D38,39 = PWML2 and PWMH2 
-	// We really only need one of these outputs, but for convenience during debugging, we'll get both.
 	const int pwmPins = 0x3 << 6;
 	ioport_set_port_mode(IOPORT_PIOC, pwmPins, IOPORT_MODE_MUX_B);
 	ioport_disable_port(IOPORT_PIOC, pwmPins);
+	
+	// PIOC - PC4 = D36 = SD Halfbridge - pull high to shut down
+	ioport_set_pin_dir(PIO_PC4_IDX, IOPORT_DIR_OUTPUT);
 	
 	// PIOC - PC12-PC19 = D51-D44 for encoders
 	// Uses pio_ API since an interrupt handler is needed
@@ -152,6 +154,7 @@ static void initPwm(void) {
 		.ul_duty = US_PERIOD / 2,
 	};
 	pwm_channel_init(PWM, &instance);
+	// TODO: ensure explicitly enabled during ui bringup, and remove this
 	pwm_channel_enable(PWM, PWM_CHANNEL_2);
 		
 	// Enable interrupts

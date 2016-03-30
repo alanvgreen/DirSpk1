@@ -170,10 +170,10 @@ void startEncoders(void) {
 	encoderDebugQueue = xQueueCreate(5, sizeof(EncoderMove));
 	
 	// Set up the state table for each encoder
-	encoderStates[0].table = stateTableB;
-	encoderStates[1].table = stateTableB;
-	encoderStates[2].table = stateTableA;
-	encoderStates[3].table = stateTableA;
+	encoderStates[0].table = stateTableA;
+	encoderStates[1].table = stateTableA;
+	encoderStates[2].table = stateTableB; // not connected
+	encoderStates[3].table = stateTableB; // not connected
 }
 
 

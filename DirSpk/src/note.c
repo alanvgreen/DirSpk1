@@ -90,3 +90,4 @@ uint8_t noteDecrement(uint8_t note) {
 		return note - 1;
 	}
 }
+

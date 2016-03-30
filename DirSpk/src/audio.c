@@ -64,11 +64,23 @@ void PWM_Handler(void) {
 	}
 }
 
+// Turn on the PWM output
+static void pwmOn(void) {
+	pwm_channel_enable(PWM, PWM_CHANNEL_2);
+	ioport_set_pin_level(PIO_PC4_IDX, false);
+}
+
+
+// turn off the PWM output
+static void pwmOff(void) {
+	pwm_channel_disable(PWM, PWM_CHANNEL_2);
+	ioport_set_pin_level(PIO_PC4_IDX, true);
+}
 
 // Set the frequency of the generated tone. 0 means off.
 void audioFrequencySet(uint32_t freq) {
 	// In order to avoid audio hiccups, don't do anything if setting 
-	// same frequency. 
+	// same frequency again. 
 	if (currFreq == freq) {
 		return;
 	}
@@ -109,14 +121,16 @@ void audioModeSet(AudioMode m) {
 	audioFrequencySet(0); // Always reset currFreq on mode change
 	switch (m) {
 		case AM_OFF:
-			pwm_channel_disable(PWM, PWM_CHANNEL_2);
+			pwmOff();
 			dacc_disable_channel(DACC, 0);
 			break;
 		case AM_ADC:
+			pwmOn();
 			pwm_channel_enable(PWM, PWM_CHANNEL_2);
 			dacc_enable_channel(DACC, 0);
 			break;
 		case AM_HZ:
+			pwmOn();
 			pwm_channel_enable(PWM, PWM_CHANNEL_2);
 			dacc_enable_channel(DACC, 0);
 			break;

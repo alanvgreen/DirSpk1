@@ -80,6 +80,8 @@ src\screen.c
 
 src\spi.c
 
+src\tunes.c
+
 src\ui.c
 
 src\util.c

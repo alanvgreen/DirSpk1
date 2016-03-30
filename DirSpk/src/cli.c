@@ -27,6 +27,8 @@ static char const *MSG_RESPONSE = "Response: ";
 static char const *MSG_SCREEN_REG_INVALID = "Register must be in range 00..ff\r\n";
 static char const *MSG_SCREEN_DATA_INVALID = "Data must be in range 00..ff\r\n";
 static char const *MSG_SCREEN_CMD_INVALID = "Screen command number not valid\r\n";
+static char const *MSG_INVALID_MODE = "Audio mode must be 0, 1 or 2\r\n";
+static char const *MSG_INVALID_VOLUME = "Volume must be between 0 and 255\r\r";
 
 static char const POT_REG_NAMES[6][7] = {
 	"R0    ",
@@ -560,6 +562,49 @@ const int8_t *pcCommandString) {
 	screenSendCommand(&cmd);
 	return pdFALSE;
 }
+
+
+// Audio set command
+static portBASE_TYPE audioSetCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+	
+	// scan through command, then through whitespace to address
+	int8_t const *p = findNextParam(pcCommandString);
+	int mode = parseInt(p, 0);
+	if (mode < 0 || mode > 2) {
+		consoleWrite(MSG_INVALID_MODE);
+		return pdFALSE;
+	}
+	
+	p = findNextParam(p);
+	int hz = parseInt(p, 0);
+	
+	audioModeSet(mode);
+	audioFrequencySet(hz);
+	
+	return pdFALSE;
+}
+
+// Audio volume command
+static portBASE_TYPE audioVolumeCommand(
+int8_t *pcWriteBuffer,
+size_t xWriteBufferLen,
+const int8_t *pcCommandString) {
+	
+	// scan through command, then through whitespace to address
+	int8_t const *p = findNextParam(pcCommandString);
+	int vol = parseInt(p, 0);
+	if (vol < 0 || vol > 255) {
+		consoleWrite(MSG_INVALID_VOLUME);
+		return pdFALSE;
+	}
+	audioVolume = vol;
+	
+	return pdFALSE;
+}
+
 	
 
 // All the commands to register
@@ -616,6 +661,18 @@ static CLI_Command_Definition_t allCommands[] = {
 		USTR("sc"),
 		USTR("sc n [x, y...]: Send command n to screen task.\r\n"),
 		screenTaskCommand,
+		1
+	},
+	{
+		USTR("as"),
+		USTR("as mode freq: Set audioMode to mode and freq to freq.\r\n"),
+		audioSetCommand,
+		2
+	},
+	{
+		USTR("av"),
+		USTR("av vol: Set audioVolume to vol.\r\n"),
+		audioVolumeCommand,
 		1
 	},
 	{

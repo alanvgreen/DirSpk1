@@ -9,7 +9,6 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 
 //
@@ -41,13 +40,13 @@
 // The various modes that the audio can be in
 typedef enum {
 	// No Audio - turn off PWM
-	AM_OFF,
+	AM_OFF = 0,
 	
 	// Via ADC channels
-	AM_ADC,
+	AM_ADC = 1,
 	
 	// Given Hz to output
-	AM_HZ	
+	AM_HZ = 2	
 } AudioMode;
 
 // Set the audio mode
@@ -75,6 +74,20 @@ extern uint8_t noteIncrement(uint8_t note);
 
 // Go down one note
 extern uint8_t noteDecrement(uint8_t note);
+
+// A note of tune data
+typedef struct {
+	// The note, encoded in the above scheme
+	uint8_t note;
+	
+	// When to end. Encoded as milliseconds / 16 relative to start of play
+	// 0xffff marks end of data
+	uint16_t endAt;
+} TuneData;
+
+// Two tunes available
+extern TuneData tuneData1[];
+extern TuneData tuneData2[];
 
 //
 // Encoders

@@ -34,10 +34,12 @@ static enum {
 } generateSubMode = GenOff;
 
 // For generated tones
-static uint8_t volume; 
-static uint8_t note; 
+// TODO: get these values from EEPROM?
+static uint8_t volume = 220; 
+static uint8_t note = 0x40; 
 
 // For input mode
+// TODO: get these values from EEPROM
 static uint8_t gain;
 static uint8_t fade;
 
@@ -75,14 +77,14 @@ static void updateGain(void) {
 static void uiHandleEncoderEvent(EncoderMove *p) {
 	// TODO: refit pots and re-instrument
 	if (uiMode == ModeGenerate) {
-		if (p->num == 2) {
+		if (p->num == 0) {
 			if (p->dir == ENC_CW) {
 				note = noteIncrement(note);
 			} else {
 				note = noteDecrement(note);
 			}
 		}
-		if (p->num == 3) {
+		if (p->num == 1) {
 			if (volume > 0 && p->dir == ENC_CCW) {
 				volume--;
 			} else if ((volume < 255) & (p->dir == ENC_CW)) {
@@ -107,6 +109,7 @@ static void uiHandleTickEvent(void) {
 		// Don't do anything until splash count down
 		if (xTaskGetTickCount() >= modeLockedUntil) {
 			uiMode = ModeInput;
+			audioModeSet(AM_ADC);
 		}
 	} else if (uiMode == ModeInput) {
 		ScreenCommand input = {
@@ -124,10 +127,18 @@ static void uiHandleTickEvent(void) {
 			.tone = generateSubMode == GenTone,
 			.tune1 = generateSubMode == GenTune1,
 			.tune2 = generateSubMode == GenTune2,
-			.volume = 196,
-			.note = 0x40,  //C4
+			.volume = volume,
+			.note = note
 		};
 		screenSendCommand(&generate);
+		
+		// TODO: either set mode and frequency here 
+		// OR change it with changing input.
+		if (generateSubMode == GenTone) {
+			audioModeSet(AM_HZ);
+			audioFrequencySet(noteToFrequency(note));
+		}
+		audioVolume = volume;
 	}
 }
 
@@ -149,9 +160,6 @@ static void uiHandleGenerateTone(void) {
 		return;
 	}
 	generateSubMode = GenTone;
-	audioModeSet(AM_HZ);
-	// Bottom C - 32Hz
-	audioFrequencySet(noteToFrequency(0x10));
 }
 
 // Handle request to turn tune1 on
@@ -213,8 +221,8 @@ static void getVolume(void) {
 
 // The ui coordinator task.
 static void uiTask(void *pvParameters) {
-	modeLockedUntil = xTaskGetTickCount() + MS_TO_TICKS(700);
-	audioVolume = 255;
+	// TODO: verify 220, and change scaling in audio.c so 255 is the new max
+	audioVolume = 220; // Maximum usable volume, as it turns out
 	
 	// Initialize the UI global state
 	spiWithMutex(getVolume);
@@ -225,6 +233,9 @@ static void uiTask(void *pvParameters) {
 	ScreenCommand startup = {.type = SCREEN_STARTUP};
 	screenSendCommand(&startup);
 	vTaskDelay(MS_TO_TICKS(700));
+
+	// Prevent change of screen mode while startup is displayed
+	modeLockedUntil = xTaskGetTickCount() + MS_TO_TICKS(700);
 	
 	// Get an event, deal with it
 	while (1) {

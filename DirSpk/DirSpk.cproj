@@ -1271,6 +1271,9 @@
     <Compile Include="src\spi.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\tunes.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\ui.c">
       <SubType>compile</SubType>
     </Compile>
