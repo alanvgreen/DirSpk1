@@ -45,6 +45,7 @@ void PWM_Handler(void) {
 		PWM->PWM_CH_NUM[2].PWM_CDTYUPD = duty;	
 	} else if (mode == AM_HZ) {
 		
+		
 		// Get TIOA value from status register
 		bool mtioa = TC0->TC_CHANNEL[0].TC_SR & TC_SR_MTIOA;
 		
@@ -67,14 +68,14 @@ void PWM_Handler(void) {
 // Turn on the PWM output
 static void pwmOn(void) {
 	pwm_channel_enable(PWM, PWM_CHANNEL_2);
-	ioport_set_pin_level(PIO_PC4_IDX, false);
+	ioport_set_pin_level(PIO_PC4_IDX, true);
 }
 
 
 // turn off the PWM output
 static void pwmOff(void) {
 	pwm_channel_disable(PWM, PWM_CHANNEL_2);
-	ioport_set_pin_level(PIO_PC4_IDX, true);
+	ioport_set_pin_level(PIO_PC4_IDX, false);
 }
 
 // Set the frequency of the generated tone. 0 means off.

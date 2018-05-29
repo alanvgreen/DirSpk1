@@ -32,7 +32,7 @@ static void initGpio(void) {
 	ioport_set_port_mode(IOPORT_PIOC, pwmPins, IOPORT_MODE_MUX_B);
 	ioport_disable_port(IOPORT_PIOC, pwmPins);
 	
-	// PIOC - PC4 = D36 = SD Halfbridge - pull high to shut down
+	// PIOC - PC4 = D36 = SD H-bridge - pull high to turn on
 	ioport_set_pin_dir(PIO_PC4_IDX, IOPORT_DIR_OUTPUT);
 	
 	// PIOC - PC12-PC19 = D51-D44 for encoders
@@ -43,6 +43,9 @@ static void initGpio(void) {
 	// Not quite the lowest priority
 	pio_handler_set_priority(PIOC, ID_PIOC, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
 	pio_enable_interrupt(PIOC, ENCODER_PINS);
+	
+	// TODO: put current sense on NMI
+	// TODO: add display wait, int
 }
 
 //
